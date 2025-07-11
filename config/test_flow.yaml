@@ -1,0 +1,60 @@
+global:
+  flow_name: test_flow
+  parallelize : true
+  log_dir : E:\\biflow
+nodes:
+  - id: 1
+    name: writeA
+    input_dir: E:\\biflow\\input\\node1
+    output_dir: E:\\biflow\\output\\node1
+    tool: test
+    log_dir: E:\\biflow\\log
+    params:
+      - file: testA
+
+  - id: 2
+    name: writeB
+    input_dir: E:\\biflow\\input\\node1
+    output_dir: E:\\biflow\\output\\node1
+    tool: test
+    log_dir: E:\\biflow\\log
+    params:
+      - file: testB
+
+  - id: 3
+    name: writeA
+    input_dir: E:\\biflow\\input\\node1
+    output_dir: E:\\biflow\\output\\node1
+    tool: test
+    log_dir: E:\\biflow\\log
+    dependencies:
+      - 1
+      - 2
+    params:
+      - file: testA
+
+  - id: 4
+    name: writeA
+    input_dir: E:\\biflow\\input\\node1
+    output_dir: E:\\biflow\\output\\node1
+    tool: test
+    log_dir: E:\\biflow\\log
+    dependencies:
+      - 3
+    params:
+      - file: testA
+
+  - id: 5
+    name: writeAB
+    parallelize : true
+    input_dir: E:\\biflow\\input\\node1
+    output_dir: E:\\biflow\\output\\node1
+    tool: test
+    log_dir: E:\\biflow\\log
+    dependencies:
+      - 4
+    params:
+      - fileA: testAB1
+      - fileB: testAB2
+
+

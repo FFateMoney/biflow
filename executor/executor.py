@@ -1,85 +1,122 @@
 import logging
-import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List
+from pathlib import Path
+from typing import Union
 
 import networkx as nx
 
 from core.node import WorkflowNode  # 你的节点类
+from util.log_util import timestamp
 
 
-def ensure_dir(path: str):
-    os.makedirs(path, exist_ok=True)
+def ensure_dir(path: Union[str, Path]):
+    path = Path(path)  # 无论是 str 还是 Path，统一转为 Path
+    path.mkdir(parents=True, exist_ok=True)
 
-def run_command(step_name: str, command: List[str], log_dir: str, index: int):
-    cmd_dir = os.path.join(log_dir, f"cmd_{index}")
-    ensure_dir(cmd_dir)
 
-    stdout_path = os.path.join(cmd_dir, "stdout.log")
-    stderr_path = os.path.join(cmd_dir, "stderr.log")
+def run_command(command: list[str], log_path: Path):
+    ensure_dir(log_path.parent)  # 确保日志目录存在
 
-    logging.info(f"[{step_name}] Running command[{index}]: {' '.join(command)}")
-    logging.info(f"[{step_name}] Logs: stdout -> {stdout_path}, stderr -> {stderr_path}")
+    with open(log_path, "a", encoding="utf-8") as log_f:
+        log_f.write(f"{timestamp()} 开始执行命令：{' '.join(command)}\n")
 
-    with open(stdout_path, "w") as out_f, open(stderr_path, "w") as err_f:
         try:
-            subprocess.run(
+            result = subprocess.run(
                 command,
                 check=True,
-                stdout=out_f,
-                stderr=err_f
+                text=True,
+                capture_output=True
             )
-            logging.info(f"[{step_name}] Command[{index}] completed.")
-        except subprocess.CalledProcessError as e:
-            logging.error(f"[{step_name}] Command[{index}] failed with return code {e.returncode}")
-            raise e
-def execute_node(node: WorkflowNode):
-    logging.info(f"===> Executing Node: {node.name} (parallel={node.parallelizable})")
-    ensure_dir(node.log_dir)
+            if result.stdout:
+                log_f.write(result.stdout)
+            log_f.write(f"{timestamp()} 命令执行完成\n\n")
 
-    if node.parallelizable:
-        with ThreadPoolExecutor(max_workers=len(node.commands)) as executor:
-            futures = [
-                executor.submit(run_command, node.name, cmd, node.log_dir, idx)
-                for idx, cmd in enumerate(node.commands)
-            ]
-            for future in as_completed(futures):
-                try:
-                    future.result()
-                except Exception as e:
-                    logging.error(f"[{node.name}] One command failed: {e}")
-                    raise
+        except subprocess.CalledProcessError as e:
+            log_f.write(e.stdout or "")
+            log_f.write(e.stderr or "")
+            log_f.write(f"{timestamp()} 命令执行失败，错误如下：\n")
+            log_f.write((e.stderr or "无错误输出") + "\n")
+            log_f.write("\n")
+            raise e
+
+
+def execute_node(node: WorkflowNode, workflow_logger: logging.Logger):
+    workflow_logger.info(f"{timestamp()} 开始运行节点：{node.name}({node.id})")
+
+    node_log_path = node.log_dir / f"{node.name}({node.id}).log"
+    if isinstance(node.commands[0], str):
+        commands = [node.commands]
     else:
-        for idx, cmd in enumerate(node.commands):
-            run_command(node.name, cmd, node.log_dir, idx)
+        commands = node.commands
+
+    try:
+        if node.parallelize:
+            workflow_logger.info("并行运行节点")
+            with ThreadPoolExecutor(max_workers=len(commands)) as executor:
+                futures = []
+                for i, cmd in enumerate(commands):
+                    cmd_log_path = node.log_dir / f"{node.name}({node.id})_cmd{i+1}.log"
+                    futures.append(executor.submit(run_command, cmd, cmd_log_path))
+                for future in as_completed(futures):
+                    future.result()
+            # 合并所有日志
+            with open(node_log_path, "a", encoding="utf-8") as merged_log:
+                for i in range(len(commands)):
+                    cmd_log_path = node.log_dir / f"{node.name}({node.id})_cmd{i+1}.log"
+                    if cmd_log_path.exists():
+                        with open(cmd_log_path, "r", encoding="utf-8") as part_log:
+                            merged_log.write(part_log.read())
+                        cmd_log_path.unlink()
+        else:
+            for command in commands:
+                run_command(command, node_log_path)
+
+        workflow_logger.info(f"{timestamp()} 节点 {node.name}({node.id}) 执行完成")
+    except Exception as e:
+        workflow_logger.error(
+            f"{timestamp()} 节点 {node.name}({node.id}) 执行失败，请查看 {node_log_path} 以获取详细信息"
+        )
+        raise
+
+
 
 def execute_graph(G: nx.DiGraph):
+    parallel_nodes = G.graph.get("parallel", False)
+    workflow_name = G.graph.get("flow_name", "workflow")
+    log_dir = Path(G.graph.get("log_dir", "logs"))
+    ensure_dir(log_dir)
 
-    parallel_nodes = G.graph.get("parallel")
+    # 图级日志文件路径为 logs/workflow_name.log
+    workflow_log_path = log_dir / f"{workflow_name}.log"
 
-    """
-    参数：
-        G: networkx.DiGraph，图中每个节点名应有属性 "node" = WorkflowNode 实例
-        parallel_nodes: 是否并行执行同一层（图级并行）
-    """
+    # 配置全局日志记录器
+    logger = logging.getLogger("workflow")
+    logger.setLevel(logging.INFO)
+    logger.handlers.clear()  # 避免重复添加 handler
+
+    file_handler = logging.FileHandler(workflow_log_path, mode="a", encoding="utf-8")
+    file_handler.setFormatter(logging.Formatter("%(message)s"))
+    logger.addHandler(file_handler)
+
+    logger.info(f"{timestamp()} 启动工作流：{workflow_name}")
+
     assert nx.is_directed_acyclic_graph(G), "图中存在循环依赖，不能执行"
 
-    layers = list(nx.topological_generations(G))  # 一层一层拓扑层次
+    layers = list(nx.topological_generations(G))
+
     for i, layer in enumerate(layers):
-        logging.info(f"--> Executing layer {i+1}/{len(layers)}: {layer}")
+        logger.info(f"{timestamp()} 执行第 {i + 1}/{len(layers)} 层：{layer}")
         if parallel_nodes:
             with ThreadPoolExecutor(max_workers=len(layer)) as executor:
                 futures = [
-                    executor.submit(execute_node, G.nodes[name]["node"])
+                    executor.submit(execute_node, G.nodes[name]["node"], logger)
                     for name in layer
                 ]
                 for future in as_completed(futures):
-                    try:
-                        future.result()
-                    except Exception as e:
-                        logging.error(f"[Layer {i+1}] Node execution failed: {e}")
-                        raise
+                    future.result()
         else:
             for name in layer:
-                execute_node(G.nodes[name]["node"])
+                execute_node(G.nodes[name]["node"], logger)
+
+    logger.info(f"{timestamp()} 工作流 {workflow_name} 执行结束")

@@ -3,6 +3,7 @@
 from adapters import samtools_adapter
 # 根据需要继续添加其它工具
 from adapters.samtools_adapter import SamtoolsAdapter
+from adapters.test_adapter import TestAdapter
 from core.node import WorkflowNode
 
 def get_adapter(node: WorkflowNode):
@@ -10,6 +11,7 @@ def get_adapter(node: WorkflowNode):
 
     adapter_map = {
         "samtools": SamtoolsAdapter,
+        "test" : TestAdapter
         # "bwa": BwaAdapter,
         # "bcftools": BcftoolsAdapter,
     }
