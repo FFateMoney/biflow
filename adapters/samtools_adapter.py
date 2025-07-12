@@ -24,5 +24,5 @@ class SamtoolsAdapter(BaseAdapter):
     def _build_faidx(self, node: WorkflowNode) -> WorkflowNode:
         reference = node.params.get("reference")
         samtools_path = node.params.get("samtools_path")
-        node.commands = [samtools_path, "faidx", reference]
+        node.commands.append([samtools_path, "faidx", reference])
         return node

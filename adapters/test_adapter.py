@@ -45,8 +45,8 @@ class TestAdapter(BaseAdapter):
         return node
 
     def writeAB(self, node: WorkflowNode) -> WorkflowNode:
-        file_pathA = node.input_dir / node.params.get("fileA")
-        file_pathB = node.input_dir / node.params.get("fileB")
+        file_pathA = node.input_dir.get("A") / node.params.get("fileA")
+        file_pathB = node.input_dir.get("B") / node.params.get("fileB")
         file_strA = file_pathA.as_posix()
         file_strB = file_pathB.as_posix()
 

@@ -42,7 +42,7 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
     """构建所有节点，返回 {节点id: WorkflowNode}"""
     node_defs = config_dict.get("nodes", [])
     id_to_node = {}
-
+    '''name代表具体执行的操作，id是这个节点的唯一标识，tool是使用的工具，input_dir是输入文件的所在文件夹路径，output_dir是输出文件所在文件夹路径，这几项都不能缺少'''
     for node_cfg in node_defs:
         node_id = str(node_cfg.get("id"))  # 确保是字符串
         if not node_id:
@@ -73,12 +73,16 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
             else:
                 raise TypeError(f"Invalid param item in node '{name}': {item}")
 
+        # 处理 input_dir 的两种类型
+        processed_input_dir = built_input_path(input_dir)
+
+        # 创建 WorkflowNode 实例
         node = WorkflowNode(
             id=node_id,
             name=name,
             tool=tool,
             commands=[],
-            input_dir=Path(input_dir),
+            input_dir=processed_input_dir,  # 使用处理后的 input_dir
             output_dir=Path(output_dir),
             log_dir=Path(log_dir),
             params=params,
@@ -91,3 +95,26 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
         id_to_node[node_id] = node
 
     return id_to_node
+
+
+def built_input_path(input_dir):
+    processed_input_dir = None
+    if isinstance(input_dir, str):
+        # 字符串类型：直接转换为 Path 对象
+        processed_input_dir = Path(input_dir)
+    elif isinstance(input_dir, list) and all(isinstance(item, dict) for item in input_dir):
+        # 键值对字典列表类型：合并为单个字典并转换值为 Path 对象
+        merged_dict = {}
+        for item in input_dir:
+            for key, value in item.items():
+                if isinstance(value, str):
+                    merged_dict[key] = Path(value)
+                else:
+                    merged_dict[key] = value  # 保留非字符串值
+        processed_input_dir = merged_dict
+    else:
+        # 其他类型：保持原始值
+        processed_input_dir = input_dir
+    return processed_input_dir
+
+

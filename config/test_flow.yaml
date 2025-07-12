@@ -47,7 +47,9 @@ nodes:
   - id: 5
     name: writeAB
     parallelize : true
-    input_dir: E:\\biflow\\input\\node1
+    input_dir:
+      - A: E:\\biflow\\input\\node1
+      - B: E:\\biflow\\input\\node2
     output_dir: E:\\biflow\\output\\node1
     tool: test
     log_dir: E:\\biflow\\log

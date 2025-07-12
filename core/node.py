@@ -4,7 +4,8 @@ from typing import List
 
 
 class WorkflowNode:
-    def __init__(self, name: str, id:numbers, commands: List, input_dir:Path, output_dir:Path, log_dir: Path, params: dict, tool:str, parallelize: bool = False):
+    def __init__(self, name: str, id: numbers, commands: List, input_dir, output_dir: Path, log_dir: Path, params: dict,
+                 tool: str, parallelize: bool = False):
         self.name = name
         self.id = id
         self.commands = commands
@@ -28,5 +29,3 @@ class WorkflowNode:
             f"params={self.params})"
 
         )
-
-
