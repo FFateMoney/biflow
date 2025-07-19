@@ -12,7 +12,9 @@ class GatkAdapter(BaseAdapter):
         # 映射操作名到函数
         operation_map = {
             "haplotype_caller": self._haplotypecaller,
-            "combine_gvcf": self._combine_gvcf
+            "combine_gvcf": self._combine_gvcf,
+            "genotyping": self._genotyping,
+            "variant_filtering": self._variant_filtering
         }
 
         if operation not in operation_map:
@@ -20,13 +22,15 @@ class GatkAdapter(BaseAdapter):
 
         return operation_map[operation](node)
 
+    '''
+    参数：input_dir:reference,gvcf params:reference,java_path,memory,vcf_prefix,tool_path
+    '''
 
-    '''参数：input_dir:reference,gvcf params:reference,java_path,memory,vcf_prefix '''
     def _combine_gvcf(self, node: WorkflowNode):
         reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
         gvcf_dir: Path = node.input_dir.get("gvcf")
         command = [
-            node.params.get("java_path"), "-Xmx", f"{node.params.get('memory')}g",
+            node.params.get("java_path"), "-Xmx", f"{node.params.get('memory')}g", "-jar", node.params.get("tool_path"),
             "-T", "CombineGVCFs", "--disable_auto_index_creation_and_locking_when_reading_rods",
             "-R", reference_path
 
@@ -39,11 +43,12 @@ class GatkAdapter(BaseAdapter):
             "-O", (node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.g.vcf.gz").as_posix()
         ]
         node.commands.append(command)
-
+        return node
 
     '''
     参数：input_dir.reference input_dir.bam java_path memory tool_path option_line th
     '''
+
     def _haplotypecaller(self, node: WorkflowNode):
         reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
         input_dir = node.input_dir.get("bam")
@@ -67,4 +72,59 @@ class GatkAdapter(BaseAdapter):
 
             node.commands.append(command)
 
+        return node
+
+    '''
+    参数：input_dir:reference,vcf;params:java_path,memory,tool_path,vcf_prefix
+    '''
+
+    def _genotyping(self, node: WorkflowNode):
+        reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
+        input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.gvcf"
+        out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.vcf"
+        command = [
+            node.params.get("java_path"), "-Xmx", f"{node.params.get('memory')}g", "-jar", node.params.get("tool_path"),
+            "-T", "GenotypeGVCFs",
+            "--disable_auto_index_creation_and_locking_when_reading_rods", "-R",
+            reference_path, "--variant", input_path.as_posix(), "--out",
+            out_path.as_posix()
+        ]
+        node.commands.append(command)
+        return node
+
+    '''
+     参数：input_dir:reference,vcf;;params:java_path,memory,tool_path,vcf_prefix,filterExpression,option_line
+    '''
+
+    def _variant_filtering(self, node: WorkflowNode):
+        reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
+        input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.vcf"
+        out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf"
+        command = [
+            node.params.get("java_path"), "-Xmx", f"{node.params.get('memory')}g", "-jar",
+            node.params.get("tool_path"), "-T", "VariantFiltration",
+            "--disable_auto_index_creation_and_locking_when_reading_rods",
+            node.params.get("option_line"), "-R", reference_path, "--variant",
+            input_path.as_posix(), "--filterName",
+            "SNPFILTER", "--filterExpression", node.params.get("filterExpression"), "--out",
+            out_path.as_posix()
+        ]
+        node.commands.append(command)
+        return node
+
+    '''
+    参数：input_dir:reference,vcf;;params:java_path,memory,tool_path,vcf_prefix
+    '''
+    def _select_variants(self, node: WorkflowNode):
+        reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
+        input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf"
+        out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.vcf"
+        command = [
+            node.params.get("java_path"), "-Xmx", f"{node.params.get('memory')}g", "-jar",
+            node.params.get("tool_path"), "-T", "SelectVariants",
+            "--disable_auto_index_creation_and_locking_when_reading_rods",
+            "-R", reference_path, "--variant", input_path.as_posix(), "-select", 'FILTER == "SNPFILTER"',
+            "--invertSelect", "-o", out_path.as_posix()
+        ]
+        node.commands.append(command)
         return node
