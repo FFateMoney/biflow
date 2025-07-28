@@ -1,0 +1,76 @@
+global:
+  flow_name: readmapping_flow
+  parallelize: true
+  log_dir: /RUN_DOCKER/output/logs
+
+nodes:
+  - id: 1
+    name: indexing
+    input_dir:
+      reference: /RUN_DOCKER/input/ref
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing
+    tool: bwa
+    log_dir: /RUN_DOCKER/output/logs
+    params:
+      - reference: cow.chr1.fa
+      - threads: 20
+
+  - id: 2
+    name: mapping
+    input_dir:
+      reference: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing
+      fastq1: /RUN_DOCKER/input/ref/QC_Report_After_Trimming/Angus/Angus1_1_trimmed.fastq.gz
+      fastq2: /RUN_DOCKER/input/ref/QC_Report_After_Trimming/Angus/Angus1_2_trimmed.fastq.gz
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
+    tool: bwa
+    log_dir: /RUN_DOCKER/output/logs
+    dependencies:
+      - 1
+    params:
+      - sample: Angus
+      - threads: 20
+
+  - id: 3
+    name: sort_bam
+    input_dir:
+      sam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping/Angus.sam
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
+    tool: samtools
+    log_dir: /RUN_DOCKER/output/logs
+    dependencies:
+      - 2
+    params:
+      - sample: Angus
+      - threads: 20
+
+  - id: 4
+    name: mark_duplicates
+    input_dir:
+      bam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping/Angus.sort.bam
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
+    tool: picard
+    log_dir: /RUN_DOCKER/output/logs
+    dependencies:
+      - 3
+    params:
+      - sample: Angus
+      - java: /opt/conda/bin/java
+      - picard: /PAPipe/Programs/picard/share/picard-2.17.11-0/picard.jar
+      - memory: 10
+
+  - id: 5
+    name: add_readgroup
+    input_dir:
+      bam: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup/Angus.marked.sort.bam
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
+    tool: picard
+    log_dir: /RUN_DOCKER/output/logs
+    dependencies:
+      - 4
+    params:
+      - sample: Angus
+      - java: /opt/conda/bin/java
+      - picard: /PAPipe/Programs/picard/share/picard-2.17.11-0/picard.jar
+      - memory: 10
+      - platform: ILLUMINA
+      - platform_unit: UNIT1
