@@ -44,20 +44,27 @@ class FastQCAdapter(BaseAdapter):
         # 确保输出目录存在
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # 批量处理所有匹配的FASTQ文件
-        for fastq_file in input_dir.glob(file_pattern):
-            command = [
-                fastqc_path,
-                "-f", "fastq",
-                "-o", output_dir.as_posix(),
-                "-t", str(threads),
-                fastq_file.as_posix()
-            ]
+        for item in os.listdir(input_dir):
+            item_inpath = os.path.join(input_dir, item)
+            item_inpath = Path(item_inpath)
+            item_outpath = os.path.join(output_dir, item)
+            item_outpath = Path(item_outpath)
+            # 确保输出目录存在
+            item_outpath.mkdir(parents=True, exist_ok=True)
+            # 批量处理所有匹配的FASTQ文件
+            for fastq_file in item_inpath.glob(file_pattern):
+                command = [
+                    fastqc_path,
+                    "-f", "fastq",
+                    "-o", item_outpath.as_posix(),
+                    "-t", str(threads),
+                    fastq_file.as_posix()
+                ]
 
-            # 添加日志重定向
-            log_file = output_dir / f"{fastq_file.stem}.fastqc.log"
-            command.extend(["2>", log_file.as_posix()])
+                # # 添加日志重定向
+                # log_file = item_outpath / f"{fastq_file.stem}.fastqc.log"
+                # command.extend(["2>", log_file.as_posix()])
 
-            node.commands.append(command)
+                node.commands.append(command)
 
         return node

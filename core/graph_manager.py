@@ -89,8 +89,8 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
             parallelize=parallelize
         )
 
-        adapter = get_adapter(node)
-        node = adapter.adapt(node)
+        # adapter = get_adapter(node)
+        # node = adapter.adapt(node)
 
         id_to_node[node_id] = node
 

@@ -1,0 +1,64 @@
+global:
+  flow_name: ReadQC
+  parallel : true
+nodes:
+  - id: 1
+    name: fastqc
+    input_dir:
+      - fastq: /home/wu/RUN_DOCKER/data/input
+    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_Before_Trimming
+    tool: fastqc
+    params:
+      - fastqc_path: /home/wu/FastQC/fastqc
+      - threads: 4
+      - flag: 0
+      - file_pattern: '*.fastq*'
+
+  - id: 2
+    name: multiqc
+    input_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_Before_Trimming
+    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_Before_Trimming
+    tool: multiqc
+    dependencies:
+      - 1
+    params:
+      - multiqc_path: multiqc
+
+  - id: 3
+    name: trim_galore
+    input_dir:
+      - fastq: /home/wu/RUN_DOCKER/data/input
+    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/TrimmedData
+    tool: trim_galore
+    params:
+      - trim_galore_path: /home/wu/TrimGalore-0.6.10/trim_galore
+      - cores: 4
+      - additional_params: ""
+      - paired_pattern: '*_1.*'
+
+
+  - id: 4
+    name: fastqc
+    input_dir:
+      - trimmed_data: /home/wu/RUN_DOCKER/out1/00_ReadQC/TrimmedData
+    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_After_Trimming
+    tool: fastqc
+    dependencies:
+      - 3
+    params:
+      - fastqc_path: /home/wu/FastQC/fastqc
+      - threads: 8
+      - flag: 1
+      - file_pattern: '*_val_*.fq.gz'
+
+  - id: 5
+    name: multiqc
+    parallelize : true
+    input_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_After_Trimming
+    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_After_Trimming
+    tool: multiqc
+    dependencies:
+      - 4
+    params:
+      - multiqc_path: multiqc
+
