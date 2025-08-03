@@ -1,17 +1,16 @@
 from pathlib import Path
-from typing import Dict, Tuple, List
+from typing import Dict
 
 import networkx as nx
 
 from adapters.adapter_factory import get_adapter
-from core.node import WorkflowNode  # 确保 import 位置正确
+from core.node import WorkflowNode
 
 
 def build_graph(config_dict: Dict) -> nx.DiGraph:
     """根据配置字典创建完整图结构（节点id为唯一标识，依赖也是id）"""
     G = nx.DiGraph()
     G.graph.update(config_dict.get("global", {}))
-
 
     id_to_node = built_nodes(config_dict)
 
@@ -42,9 +41,10 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
     """构建所有节点，返回 {节点id: WorkflowNode}"""
     node_defs = config_dict.get("nodes", [])
     id_to_node = {}
-    '''name代表具体执行的操作，id是这个节点的唯一标识，tool是使用的工具，input_dir是输入文件的所在文件夹路径，output_dir是输出文件所在文件夹路径，这几项都不能缺少'''
+    global_config = config_dict.get("global", {})
+
     for node_cfg in node_defs:
-        node_id = str(node_cfg.get("id"))  # 确保是字符串
+        node_id = str(node_cfg.get("id"))
         if not node_id:
             raise ValueError("Node missing 'id' field")
 
@@ -64,7 +64,7 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
         log_dir = node_cfg.get("log_dir", "")
         parallelize = node_cfg.get("parallelize", False)
 
-        # 合并 params
+        # 合并 params（YAML 列表 → 字典）
         params_list = node_cfg.get("params", [])
         params = {}
         for item in params_list:
@@ -73,24 +73,31 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
             else:
                 raise TypeError(f"Invalid param item in node '{name}': {item}")
 
-        # 处理 input_dir 的两种类型
+        # 统一处理 input_dir
         processed_input_dir = built_input_path(input_dir)
 
-        # 创建 WorkflowNode 实例
         node = WorkflowNode(
             id=node_id,
             name=name,
             tool=tool,
             commands=[],
-            input_dir=processed_input_dir,  # 使用处理后的 input_dir
+            input_dir=processed_input_dir,
             output_dir=Path(output_dir),
             log_dir=Path(log_dir),
             params=params,
-            parallelize=parallelize
+            parallelize=parallelize,
+            breeds=[],
+            samples=[],
         )
 
-        adapter = get_adapter(node)
+        # ===== 保留两种适配器调用方式 =====
+        # 方式1：传统传参（兼容已有适配器）
+        adapter = get_adapter(tool, global_config)
         node = adapter.adapt(node)
+
+        # 方式2：未来可启用（传整个节点对象，需适配器实现对应接口）
+        # adapter = get_adapter(node)
+        # node = adapter.adapt(node)
 
         id_to_node[node_id] = node
 
@@ -98,23 +105,9 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
 
 
 def built_input_path(input_dir):
-    processed_input_dir = None
+    """统一处理 input_dir 为 Path 或字典"""
     if isinstance(input_dir, str):
-        # 字符串类型：直接转换为 Path 对象
-        processed_input_dir = Path(input_dir)
-    elif isinstance(input_dir, list) and all(isinstance(item, dict) for item in input_dir):
-        # 键值对字典列表类型：合并为单个字典并转换值为 Path 对象
-        merged_dict = {}
-        for item in input_dir:
-            for key, value in item.items():
-                if isinstance(value, str):
-                    merged_dict[key] = Path(value)
-                else:
-                    merged_dict[key] = value  # 保留非字符串值
-        processed_input_dir = merged_dict
-    else:
-        # 其他类型：保持原始值
-        processed_input_dir = input_dir
-    return processed_input_dir
-
-
+        return Path(input_dir)
+    if isinstance(input_dir, list) and all(isinstance(item, dict) for item in input_dir):
+        return {k: Path(v) if isinstance(v, str) else v for item in input_dir for k, v in item.items()}
+    return input_dir
