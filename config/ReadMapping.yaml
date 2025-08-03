@@ -1,76 +1,85 @@
 global:
-  flow_name: readmapping_flow
+  flow_name: ReadMapping
   parallelize: true
   log_dir: /RUN_DOCKER/output/logs
+  output_dir: /RUN_DOCKER/output/results/01_ReadMapping
 
 nodes:
   - id: 1
     name: indexing
     input_dir:
-      reference: /RUN_DOCKER/input/ref
+      - reference: /RUN_DOCKER/input/ref/cow.chr1.fa
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing
-    tool: bwa
+    tool: bwa_index
     log_dir: /RUN_DOCKER/output/logs
     params:
-      - reference: cow.chr1.fa
+      - bwa_path: "/opt/conda/bin/bwa"
       - threads: 20
+      - reference: "/RUN_DOCKER/input/ref/cow.chr1.fa"
+      - prefix: "ref"
 
   - id: 2
-    name: mapping
+    name: batch_mapping
     input_dir:
-      reference: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing
-      fastq1: /RUN_DOCKER/input/ref/QC_Report_After_Trimming/Angus/Angus1_1_trimmed.fastq.gz
-      fastq2: /RUN_DOCKER/input/ref/QC_Report_After_Trimming/Angus/Angus1_2_trimmed.fastq.gz
+      - base: /RUN_DOCKER/input/TrimmedData_repaired
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
-    tool: bwa
+    tool: bwa_mem
     log_dir: /RUN_DOCKER/output/logs
-    dependencies:
-      - 1
+    parallelize: true
+    dependencies: [1]
     params:
-      - sample: Angus
-      - threads: 20
+      - bwa_path: "/opt/conda/bin/bwa"
+      - threads: 4
+      - index_prefix: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing/ref
+      - platform: "ILLUMINA"
+      - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
+      - samples: ["1", "2", "3", "4", "5"]
 
   - id: 3
-    name: sort_bam
+    name: batch_sorting
     input_dir:
-      sam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping/Angus.sam
+      - input_sam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
-    tool: samtools
+    tool: samtools_sort
     log_dir: /RUN_DOCKER/output/logs
-    dependencies:
-      - 2
+    parallelize: true
+    dependencies: [2]
     params:
-      - sample: Angus
-      - threads: 20
+      - samtools_path: "/opt/conda/bin/samtools"
+      - threads: 4
+      - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
+      - samples: ["1", "2", "3", "4", "5"]
 
   - id: 4
-    name: mark_duplicates
+    name: batch_mark_duplicates
     input_dir:
-      bam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping/Angus.sort.bam
+      - input_bam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
-    tool: picard
+    tool: picard_markduplicates
     log_dir: /RUN_DOCKER/output/logs
-    dependencies:
-      - 3
+    parallelize: true
+    dependencies: [3]
     params:
-      - sample: Angus
-      - java: /opt/conda/bin/java
-      - picard: /PAPipe/Programs/picard/share/picard-2.17.11-0/picard.jar
-      - memory: 10
+      - java_path: "/opt/conda/bin/java"
+      - picard_path:  "/opt/conda/pkgs/picard-2.27.5-hdfd78af_0/share/picard-2.27.5-0/picard.jar"
+      - memory: 4
+      - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
+      - samples: ["1", "2", "3", "4", "5"]
 
   - id: 5
-    name: add_readgroup
+    name: batch_add_read_groups
     input_dir:
-      bam: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup/Angus.marked.sort.bam
+      - input_bam: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
-    tool: picard
+    tool: picard_addrg
     log_dir: /RUN_DOCKER/output/logs
-    dependencies:
-      - 4
+    parallelize: true
+    dependencies: [4]
     params:
-      - sample: Angus
-      - java: /opt/conda/bin/java
-      - picard: /PAPipe/Programs/picard/share/picard-2.17.11-0/picard.jar
-      - memory: 10
-      - platform: ILLUMINA
-      - platform_unit: UNIT1
+      - java_path: "/opt/conda/bin/java"
+      - picard_path:  "/opt/conda/pkgs/picard-2.27.5-hdfd78af_0/share/picard-2.27.5-0/picard.jar"
+      - memory: 4
+      - platform: "ILLUMINA"
+      - platform_unit: "UNIT1"
+      - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
+      - samples: ["1", "2", "3", "4", "5"]
