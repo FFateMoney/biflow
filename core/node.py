@@ -16,7 +16,7 @@ class WorkflowNode:
         self.output_dir = output_dir
         self.log_dir = log_dir
 
-    def __repr__(self):
+    def repr(self):
         return (
             f"id='{self.id}', "
             f"WorkflowNode(name='{self.name}', "

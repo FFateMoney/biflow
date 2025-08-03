@@ -6,6 +6,7 @@ from typing import Union
 
 import networkx as nx
 
+from adapters.adapter_factory import get_adapter
 from core.node import WorkflowNode  # 你的节点类
 from util.log_util import timestamp
 
@@ -49,6 +50,10 @@ def run_command(command: list[str], log_path: Path):
 
 
 def execute_node(node: WorkflowNode, workflow_logger: logging.Logger):
+    adapter = get_adapter(node)
+    node = adapter.adapt(node)
+    print(node.repr())
+    
     node_dir = node.log_dir / f"{node.name}({node.id})"
     ensure_dir(node_dir)
     run_log_path = node_dir / "run.log"
@@ -129,3 +134,4 @@ def execute_graph(G: nx.DiGraph):
                 execute_node(G.nodes[name]["node"], logger)
 
     logger.info(f"{timestamp()} 工作流 {workflow_name} 执行结束\n\n")
+
