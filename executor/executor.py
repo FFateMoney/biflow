@@ -1,8 +1,9 @@
 import logging
 import subprocess
+import shlex
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import List
+from typing import Union, List
 
 import networkx as nx
 
@@ -11,7 +12,7 @@ from core.node import WorkflowNode
 from util.log_util import timestamp
 
 
-def ensure_dir(path: str | Path) -> None:
+def ensure_dir(path: Union[str, Path]) -> None:
     Path(path).mkdir(parents=True, exist_ok=True)
 
 
@@ -32,35 +33,58 @@ def save_status(status_path: Path, completed: bool, completed_cmds: int) -> None
         f.write(f"completed_cmds = {completed_cmds}\n")
 
 
-def run_command(command: list[str], log_path: Path) -> None:
-    """执行纯列表命令，无 shell"""
+def run_command(
+    command: Union[str, List[str]],
+    log_path: Path,
+    *,
+    use_shell: bool = False,
+) -> None:
+    """
+    统一执行接口：
+      use_shell=False（默认）：安全，仅 list[str]
+      use_shell=True ：支持重定向、管道等 shell 特性
+    """
     ensure_dir(log_path.parent)
+    cmd_str = " ".join(command) if isinstance(command, list) else str(command)
+
     with open(log_path, "a", encoding="utf-8") as log_f:
-        log_f.write(f"{timestamp()} 开始执行命令：{' '.join(command)}\n")
+        log_f.write(f"{timestamp()} 开始执行命令：{cmd_str}\n")
         try:
-            result = subprocess.run(
-                command,
-                check=True,
-                text=True,
-                capture_output=True,
-            )
+            if use_shell:
+                result = subprocess.run(
+                    cmd_str,
+                    shell=True,
+                    check=True,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                )
+            else:
+                result = subprocess.run(
+                    command if isinstance(command, list) else shlex.split(command),
+                    check=True,
+                    text=True,
+                    capture_output=True,
+                )
             log_f.write(result.stdout or "")
             log_f.write(f"{timestamp()} 命令执行完成\n\n")
         except subprocess.CalledProcessError as e:
             log_f.write(e.stdout or "")
             log_f.write(e.stderr or "")
-            log_f.write(f"{timestamp()} 命令执行失败，错误如下：\n{e.stderr or '无错误输出'}")
+            log_f.write(f"{timestamp()} 命令执行失败\n")
             raise
 
 
 def execute_node(
     node: WorkflowNode,
     workflow_logger: logging.Logger,
+    *,
+    use_shell: bool = False,
 ) -> None:
-    """执行单个节点：先让适配器生成 list[str] 命令，再统一执行"""
+    # ====== 下方文件原有逻辑，仅增加 use_shell 参数 ======
     adapter = get_adapter(node)
     node = adapter.adapt(node)
-    print(node)  # 调试用
+    print(node)
 
     node_dir = node.log_dir / f"{node.name}({node.id})"
     ensure_dir(node_dir)
@@ -69,15 +93,9 @@ def execute_node(
 
     workflow_logger.info(f"{timestamp()} 开始运行节点：{node.name}({node.id})")
 
-    # 保证 commands 为 list[list[str]]
-    if not node.commands:
-        commands = []
-    elif isinstance(node.commands[0], str):
-        commands = [node.commands]  # 单条
-    else:
-        commands = node.commands
-
+    commands = [node.commands] if isinstance(node.commands[0], str) else node.commands
     status = load_status(status_path)
+
     if status["completed"]:
         workflow_logger.info(f"{timestamp()} 跳过节点：{node.name}({node.id})，已完成")
         return
@@ -86,7 +104,7 @@ def execute_node(
         if node.parallelize:
             with ThreadPoolExecutor(max_workers=len(commands)) as executor:
                 futures = [
-                    executor.submit(run_command, cmd, node_dir / f"cmd{i+1}.log")
+                    executor.submit(run_command, cmd, node_dir / f"cmd{i+1}.log", use_shell=use_shell)
                     for i, cmd in enumerate(commands)
                 ]
                 for future in as_completed(futures):
@@ -100,9 +118,10 @@ def execute_node(
                         run_log.write(part_log.read_text(encoding="utf-8"))
                         part_log.unlink()
             save_status(status_path, completed=True, completed_cmds=len(commands))
+
         else:
             for i, cmd in enumerate(commands[status["completed_cmds"]:], start=status["completed_cmds"]):
-                run_command(cmd, run_log_path)
+                run_command(cmd, run_log_path, use_shell=use_shell)
                 save_status(status_path, completed=False, completed_cmds=i + 1)
             save_status(status_path, completed=True, completed_cmds=len(commands))
 
@@ -114,8 +133,7 @@ def execute_node(
         raise
 
 
-def execute_graph(G: nx.DiGraph) -> None:
-    """按拓扑层执行整张图"""
+def execute_graph(G: nx.DiGraph, *, use_shell: bool = False) -> None:
     parallel_nodes = G.graph.get("parallel", False)
     workflow_name = G.graph.get("flow_name", "workflow")
     log_dir = Path(G.graph.get("log_dir", "logs"))
@@ -140,13 +158,13 @@ def execute_graph(G: nx.DiGraph) -> None:
         if parallel_nodes:
             with ThreadPoolExecutor(max_workers=len(layer)) as executor:
                 futures = [
-                    executor.submit(execute_node, G.nodes[name]["node"], logger)
+                    executor.submit(execute_node, G.nodes[name]["node"], logger, use_shell=use_shell)
                     for name in layer
                 ]
                 for future in as_completed(futures):
                     future.result()
         else:
             for name in layer:
-                execute_node(G.nodes[name]["node"], logger)
+                execute_node(G.nodes[name]["node"], logger, use_shell=use_shell)
 
     logger.info(f"{timestamp()} 工作流 {workflow_name} 执行结束\n\n")
