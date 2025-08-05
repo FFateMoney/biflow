@@ -2,10 +2,9 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 from pathlib import Path
 
-
 class SamtoolsAdapter(BaseAdapter):
-    def __init__(self, config, sample_data=None):
-        super().__init__(config, sample_data)
+    def __init__(self, config=None, sample_data=None):
+        super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
         operation = node.name.lower()
