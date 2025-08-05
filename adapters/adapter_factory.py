@@ -1,12 +1,13 @@
 # adapters/adapter_factory.py
 
-from adapters import samtools_adapter
-# 根据需要继续添加其它工具
 from adapters.samtools_adapter import SamtoolsAdapter
 from adapters.test_adapter import TestAdapter
 from adapters.fastqc_adapter import FastQCAdapter
 from adapters.multiqc_adapter import MultiQCAdapter
 from adapters.trimgalore_adapter import TrimGaloreAdapter
+from adapters.bwa_adapter import BwaAdapter
+from adapters.bowtie2_adapter import Bowtie2Adapter
+from adapters.picard_adapter import PicardAdapter
 from core.node import WorkflowNode
 
 def get_adapter(node: WorkflowNode):
@@ -17,7 +18,11 @@ def get_adapter(node: WorkflowNode):
         "test": TestAdapter,
         "fastqc": FastQCAdapter,
         "multiqc": MultiQCAdapter,
-        "trim_galore": TrimGaloreAdapter
+        "trim_galore": TrimGaloreAdapter,
+        "bowtie2": Bowtie2Adapter,
+        "bwa": BwaAdapter,
+        "samtools_sort": SamtoolsAdapter,
+        "picard": PicardAdapter,
         # "bwa": BwaAdapter,
         # "bcftools": BcftoolsAdapter,
     }

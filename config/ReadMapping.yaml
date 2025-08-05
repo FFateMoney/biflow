@@ -1,0 +1,85 @@
+global:
+  flow_name: ReadMapping
+  parallelize: true
+  log_dir: /RUN_DOCKER/output/logs
+  output_dir: /RUN_DOCKER/output/results/01_ReadMapping
+
+nodes:
+  - id: 1
+    name: indexing
+    input_dir:
+      - reference: /RUN_DOCKER/input/ref/cow.chr1.fa
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing
+    tool: bwa_index
+    log_dir: /RUN_DOCKER/output/logs
+    params:
+      - bwa_path: "/opt/conda/bin/bwa"
+      - threads: 20
+      - reference: "/RUN_DOCKER/input/ref/cow.chr1.fa"
+      - prefix: "ref"
+
+  - id: 2
+    name: batch_mapping
+    input_dir:
+      - base: /RUN_DOCKER/input/TrimmedData_repaired
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
+    tool: bwa_mem
+    log_dir: /RUN_DOCKER/output/logs
+    parallelize: true
+    dependencies: [1]
+    params:
+      - bwa_path: "/opt/conda/bin/bwa"
+      - threads: 4
+      - index_prefix: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing/ref
+      - platform: "ILLUMINA"
+      - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
+      - samples: ["1", "2", "3", "4", "5"]
+
+  - id: 3
+    name: batch_sorting
+    input_dir:
+      - input_sam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
+    tool: samtools_sort
+    log_dir: /RUN_DOCKER/output/logs
+    parallelize: true
+    dependencies: [2]
+    params:
+      - samtools_path: "/opt/conda/bin/samtools"
+      - threads: 4
+      - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
+      - samples: ["1", "2", "3", "4", "5"]
+
+  - id: 4
+    name: batch_mark_duplicates
+    input_dir:
+      - input_bam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
+    tool: picard_markduplicates
+    log_dir: /RUN_DOCKER/output/logs
+    parallelize: true
+    dependencies: [3]
+    params:
+      - java_path: "/opt/conda/bin/java"
+      - picard_path:  "/opt/conda/pkgs/picard-2.27.5-hdfd78af_0/share/picard-2.27.5-0/picard.jar"
+      - memory: 4
+      - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
+      - samples: ["1", "2", "3", "4", "5"]
+
+  - id: 5
+    name: batch_add_read_groups
+    input_dir:
+      - input_bam: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
+    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
+    tool: picard_addrg
+    log_dir: /RUN_DOCKER/output/logs
+    parallelize: true
+    dependencies: [4]
+    params:
+      - java_path: "/opt/conda/bin/java"
+      - picard_path:  "/opt/conda/pkgs/picard-2.27.5-hdfd78af_0/share/picard-2.27.5-0/picard.jar"
+      - memory: 4
+      - platform: "ILLUMINA"
+      - platform_unit: "UNIT1"
+      - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
+      - samples: ["1", "2", "3", "4", "5"]

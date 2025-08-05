@@ -1,28 +1,42 @@
 from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
-
+from pathlib import Path
 
 class SamtoolsAdapter(BaseAdapter):
+    def __init__(self, config=None, sample_data=None):
+        super().__init__(config or {}, sample_data)
+
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()  # node的name即是操作
+        operation = node.name.lower()
+        if operation in ("batch_sorting", "samtools_sort"):
+            return self._build_sort(node)
+        raise ValueError(f"Unsupported samtools operation: {operation}")
 
-        # 映射操作名到函数
-        operation_map = {
-            "samtools_sort": self._build_sort,
-            "samtools_faidx": self._build_faidx
-        }
+    def _build_sort(self, node: WorkflowNode):
+        samtools_path = node.params["samtools_path"]
+        breeds = node.params.get("breeds") or []
+        samples = node.params.get("samples") or []
 
-        if operation not in operation_map:
-            raise ValueError(f"Unsupported samtools operation: {operation}")
+        commands = []
+        input_dir = Path(node.input_dir["input_sam"])
+        output_dir = Path(node.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-        return operation_map[operation](node)
+        for breed in breeds:
+            for sample_id in samples:
+                input_sam = input_dir / f"{breed}{sample_id}.sam"
+                output_bam = output_dir / f"{breed}{sample_id}.sort.bam"
 
-    def _build_sort(self, node: WorkflowNode) -> WorkflowNode:
-
-        return node
-
-    def _build_faidx(self, node: WorkflowNode) -> WorkflowNode:
-        reference = node.params.get("reference")
-        samtools_path = node.params.get("samtools_path")
-        node.commands.append([samtools_path, "faidx", reference])
+                commands.append(
+                    [
+                        samtools_path,
+                        "sort",
+                        "-@",
+                        str(node.params.get("threads", 4)),
+                        "-o",
+                        str(output_bam),
+                        str(input_sam),
+                    ]
+                )
+        node.commands = commands
         return node

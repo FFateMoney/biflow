@@ -1,28 +1,117 @@
 from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
-
+from pathlib import Path
 
 class PicardAdapter(BaseAdapter):
+    def __init__(self, config=None, sample_data=None):
+        super().__init__(config or {}, sample_data)
+
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()  # node的name即是操作
+        name = node.name.lower()
+        if name == "batch_mark_duplicates":
+            return self._build_mark_duplicates(node)
+        if name == "batch_add_read_groups":
+            return self._build_add_read_groups(node)
+        if name == "picard_create_sequence_dictionary":
+            return self._build_create_sequence_dictionary(node)
+        raise ValueError(f"Unsupported Picard operation: {node.name}")
 
-        # 映射操作名到函数
-        operation_map = {
-            "picard_create_sequence_dictionary": self._build_create_sequence_dictionary,
+    def _build_mark_duplicates(self, node: WorkflowNode):
+        java = node.params.get("java_path", "java")
+        jar = node.params["picard_path"]
+        mem = node.params.get("memory", 4)
+        breeds = node.params.get("breeds") or []
+        samples = node.params.get("samples") or []
 
-        }
+        commands = []
+        in_dir = Path(node.input_dir["input_bam"])
+        out_dir = Path(node.output_dir)
+        log_dir = Path("/RUN_DOCKER/output/logs")
+        for d in (out_dir, log_dir):
+            d.mkdir(parents=True, exist_ok=True)
 
-        if operation not in operation_map:
-            raise ValueError(f"Unsupported picard operation: {operation}")
+        for b in breeds:
+            for s in samples:
+                sample = f"{b}{s}"
+                in_bam = in_dir / f"{sample}.sort.bam"
+                out_bam = out_dir / f"{sample}.marked.sort.bam"
+                metrics = out_dir / f"{sample}.dup_metrics.txt"
+                logfile = log_dir / f"02_markdup_{sample}.log"
 
-        return operation_map[operation](node)
+                commands.append(
+                    [
+                        java,
+                        f"-Xmx{mem}g",
+                        "-jar",
+                        jar,
+                        "MarkDuplicates",
+                        "I=" + str(in_bam),
+                        "O=" + str(out_bam),
+                        "M=" + str(metrics),
+                        "REMOVE_DUPLICATES=false",
+                        "VALIDATION_STRINGENCY=LENIENT",
+                    ]
+                )
+        node.commands = commands
+        return node
+
+    def _build_add_read_groups(self, node: WorkflowNode):
+        java = node.params.get("java_path", "java")
+        jar = node.params["picard_path"]
+        mem = node.params.get("memory", 4)
+        pl = node.params.get("platform", "ILLUMINA")
+        pu = node.params.get("platform_unit", "UNIT1")
+        breeds = node.params.get("breeds") or []
+        samples = node.params.get("samples") or []
+
+        commands = []
+        in_dir = Path(node.input_dir["input_bam"])
+        out_dir = Path(node.output_dir)
+        log_dir = Path("/RUN_DOCKER/output/logs")
+        for d in (out_dir, log_dir):
+            d.mkdir(parents=True, exist_ok=True)
+
+        for b in breeds:
+            for s in samples:
+                sample = f"{b}{s}"
+                in_bam = in_dir / f"{sample}.marked.sort.bam"
+                out_bam = out_dir / f"{sample}.addRG.marked.sort.bam"
+                logfile = log_dir / f"02_readgroup_{sample}.log"
+
+                commands.append(
+                    [
+                        java,
+                        f"-Xmx{mem}g",
+                        "-jar",
+                        jar,
+                        "AddOrReplaceReadGroups",
+                        "I=" + str(in_bam),
+                        "O=" + str(out_bam),
+                        f"RGID={sample}",
+                        f"RGLB={sample}",
+                        f"RGPL={pl}",
+                        f"RGPU={pu}",
+                        f"RGSM={sample}",
+                    ]
+                )
+        node.commands = commands
+        return node
 
     def _build_create_sequence_dictionary(self, node: WorkflowNode):
-        reference_path = (node.input_dir / node.params.get("reference")).as_posix()
-        output_dir = (node.output_dir / node.params.get('reference').replace('.fa', '.dict')).as_posix()
-        command = [
-            node.params.get("java_path"), "-jar", f"R={reference_path}",
-            f"O={output_dir}"
+        java = node.params.get("java_path", "java")
+        jar = node.params["picard_path"]
+        ref_name = node.params["reference"]
+        ref_path = Path(node.input_dir["reference"]) / ref_name
+        dict_path = Path(node.output_dir) / ref_name.replace(".fa", ".dict")
+
+        node.commands = [
+            [
+                java,
+                "-jar",
+                jar,
+                "CreateSequenceDictionary",
+                "R=" + str(ref_path),
+                "O=" + str(dict_path),
+            ]
         ]
-        node.commands.append(command)
         return node
