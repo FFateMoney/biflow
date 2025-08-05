@@ -2,10 +2,9 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 from pathlib import Path
 
-
 class PicardAdapter(BaseAdapter):
-    def __init__(self, config, sample_data=None):
-        super().__init__(config, sample_data)
+    def __init__(self, config=None, sample_data=None):
+        super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
         name = node.name.lower()
@@ -115,40 +114,4 @@ class PicardAdapter(BaseAdapter):
                 "O=" + str(dict_path),
             ]
         ]
-        return node
-        cmds = []
-        for b in breeds:
-            for s in samples:
-                sample = f"{b}{s}"
-                in_bam = in_dir / f"{sample}.marked.sort.bam"
-                out_bam = out_dir / f"{sample}.addRG.marked.sort.bam"
-                logfile = log_dir / f"02_readgroup_{sample}.log"
-
-                cmd = (
-                    f"{java} -Xmx{mem}g -jar {jar} AddOrReplaceReadGroups "
-                    f"I={in_bam} O={out_bam} "
-                    f"RGID={sample} RGLB={sample} RGPL={pl} "
-                    f"RGPU={pu} RGSM={sample} "
-                    f"> {logfile} 2>&1"
-                )
-                cmds.append(cmd)
-        node.commands = cmds
-        return node
-
-    # 新增：创建序列字典
-    def _build_create_sequence_dictionary(self, node: WorkflowNode):
-        reference = node.params.get("reference")
-        java_path = node.params.get("java_path", "java")
-        picard_path = node.params.get("picard_path")
-        if not reference or not picard_path:
-            raise ValueError("Missing 'reference' or 'picard_path' in params")
-
-        ref_path = Path(node.input_dir["reference"]) / reference
-        dict_path = Path(node.output_dir) / reference.replace(".fa", ".dict")
-
-        cmd = (
-            f"{java_path} -jar {picard_path} CreateSequenceDictionary "
-            f"R={ref_path} O={dict_path}"
-        )
-        node.commands = [cmd]
         return node
