@@ -19,14 +19,12 @@ def get_adapter(node: WorkflowNode):
         "fastqc": FastQCAdapter,
         "multiqc": MultiQCAdapter,
         "trim_galore": TrimGaloreAdapter,
-        "bwa_index": BwaAdapter,
-        "bwa_mem": BwaAdapter,
         "bowtie2": Bowtie2Adapter,
-        "picard_markduplicates": PicardAdapter,
-        "picard_addrg": PicardAdapter,
         "bwa": BwaAdapter,
         "samtools_sort": SamtoolsAdapter,
         "picard": PicardAdapter,
+        # "bwa": BwaAdapter,
+        # "bcftools": BcftoolsAdapter,
     }
 
     if tool not in adapter_map:

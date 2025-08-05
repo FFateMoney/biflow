@@ -3,8 +3,7 @@ from core import graph_manager
 from executor.executor import execute_graph
 
 def main():
-    conf = yaml_util.load_yaml_to_dict("./config/ReadMapping.yaml")
-    print(" 配置文件加载成功")
+    conf = yaml_util.load_yaml_to_dict("./config/ReadQC.yaml")
     graphy = graph_manager.build_graph(conf)
     print(" 图构建成功，节点如下：")
     for i in graphy.nodes:
