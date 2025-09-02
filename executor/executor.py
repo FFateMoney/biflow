@@ -2,19 +2,17 @@ import logging
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
 import networkx as nx
 
 from adapters.adapter_factory import get_adapter
-from core.node import WorkflowNode  # 你的节点类
+from core.node import WorkflowNode
 from util.log_util import timestamp
 
-
 def ensure_dir(path: Union[str, Path]):
-    path = Path(path)  # 无论是 str 还是 Path，统一转为 Path
+    path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
-
 
 def load_status(status_path: Path) -> dict:
     if not status_path.exists():
@@ -27,14 +25,12 @@ def load_status(status_path: Path) -> dict:
             "completed_cmds": int(status.get("completed_cmds", 0))
         }
 
-
 def save_status(status_path: Path, completed: bool, completed_cmds: int):
     with open(status_path, "w", encoding="utf-8") as f:
         f.write(f"completed = {'true' if completed else 'false'}\n")
         f.write(f"completed_cmds = {completed_cmds}\n")
 
-
-def run_command(command: list[str], log_path: Path):
+def run_command(command: List[str], log_path: Path):
     ensure_dir(log_path.parent)
     with open(log_path, "a", encoding="utf-8") as log_f:
         log_f.write(f"{timestamp()} 开始执行命令：{' '.join(command)}\n")
@@ -48,12 +44,11 @@ def run_command(command: list[str], log_path: Path):
             log_f.write(f"{timestamp()} 命令执行失败，错误如下：\n{e.stderr or '无错误输出'}")
             raise e
 
-
 def execute_node(node: WorkflowNode, workflow_logger: logging.Logger):
     adapter = get_adapter(node)
     node = adapter.adapt(node)
-    print(node.repr())
-    
+    print(node.__repr__())
+
     node_dir = node.log_dir / f"{node.name}({node.id})"
     ensure_dir(node_dir)
     run_log_path = node_dir / "run.log"
@@ -78,7 +73,6 @@ def execute_node(node: WorkflowNode, workflow_logger: logging.Logger):
                 for future in as_completed(futures):
                     future.result()
 
-            # 合并所有日志
             with open(run_log_path, "a", encoding="utf-8") as run_log:
                 for i in range(len(commands)):
                     part_log = node_dir / f"cmd{i+1}.log"
@@ -86,7 +80,6 @@ def execute_node(node: WorkflowNode, workflow_logger: logging.Logger):
                         run_log.write(part_log.read_text(encoding="utf-8"))
                         part_log.unlink()
             save_status(status_path, completed=True, completed_cmds=len(commands))
-
         else:
             for i, cmd in enumerate(commands[status["completed_cmds"]:], start=status["completed_cmds"]):
                 run_command(cmd, run_log_path)
@@ -97,7 +90,6 @@ def execute_node(node: WorkflowNode, workflow_logger: logging.Logger):
     except Exception as e:
         workflow_logger.error(f"{timestamp()} 节点 {node.name}({node.id}) 执行失败，请查看 {run_log_path}")
         raise
-
 
 def execute_graph(G: nx.DiGraph):
     parallel_nodes = G.graph.get("parallel", False)
@@ -134,4 +126,3 @@ def execute_graph(G: nx.DiGraph):
                 execute_node(G.nodes[name]["node"], logger)
 
     logger.info(f"{timestamp()} 工作流 {workflow_name} 执行结束\n\n")
-
