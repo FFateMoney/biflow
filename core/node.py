@@ -29,7 +29,7 @@ class WorkflowNode:
         self.breeds = breeds or []
         self.samples = samples or []
 
-    def repr(self):
+    def __repr__(self):
         return (
             f"WorkflowNode(id='{self.id}', "
             f"name='{self.name}', "
