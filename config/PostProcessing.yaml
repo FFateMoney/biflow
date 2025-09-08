@@ -1,0 +1,47 @@
+# PostProcessing.yaml
+global:
+  flow_name: PostProcessing
+  parallelize: true
+  log_dir: /RUN_DOCKER/output/logs
+  output_dir: /RUN_DOCKER/output/results/03_PostProcessing
+
+nodes:
+  - id: 1
+    name: vcf_filter
+    tool: vcftools
+    input_dir:
+      vcf: /RUN_DOCKER/input/vcf/VariantCalling/ALL.variant.combined.GT.SNP.flt.vcf.gz
+    output_dir: /RUN_DOCKER/output/results/03_PostProcessing/01_VcfFilter
+    log_dir: /RUN_DOCKER/output/logs
+    parallelize: false
+    params:
+      - vcftools_path: /opt/conda/bin/vcftools
+
+  - id: 2
+    name: plink_qc
+    tool: plink
+    input_dir:
+      vcf: /RUN_DOCKER/output/results/03_PostProcessing/01_VcfFilter/ALL.variant.combined.GT.SNP.flt.filtered.vcf.recode.vcf.gz
+    output_dir: /RUN_DOCKER/output/results/03_PostProcessing/02_Plink
+    log_dir: /RUN_DOCKER/output/logs
+    parallelize: false
+    dependencies: [1]
+    params:
+      - plink_path: /opt/conda/bin/plink
+      - geno: 0.01
+      - maf: 0.05
+      - hwe: 1e-06
+      - chr-set: 1
+
+  - id: 3
+    name: vcf2hapmap
+    tool: hapmap
+    input_dir:
+      vcf: /RUN_DOCKER/output/results/03_PostProcessing/01_VcfFilter/ALL.variant.combined.GT.SNP.flt.filtered.vcf.recode.vcf.gz
+    output_dir: /RUN_DOCKER/output/results/03_PostProcessing/03_Hapmap
+    log_dir: /RUN_DOCKER/output/logs
+    parallelize: false
+    dependencies: [1]
+    params:
+      - perl_path: /usr/bin/perl
+      - script_path: /PAPipe/03_shipeiqi/config/vcf2HapMap.pl
