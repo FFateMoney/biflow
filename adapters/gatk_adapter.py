@@ -14,7 +14,9 @@ class GatkAdapter(BaseAdapter):
             "haplotype_caller": self._haplotypecaller,
             "combine_gvcf": self._combine_gvcf,
             "genotyping": self._genotyping,
-            "variant_filtering": self._variant_filtering
+            "variant_filtering": self._variant_filtering,
+            "select_variants": self._select_variants,
+            "varint_selection": self._varint_selection
         }
 
         if operation not in operation_map:
@@ -93,7 +95,7 @@ class GatkAdapter(BaseAdapter):
         return node
 
     '''
-     参数：input_dir:reference,vcf;;params:java_path,memory,tool_path,vcf_prefix,filterExpression,option_line
+     参数：input_dir:reference,vcf;;params:java_path,memory,tool_path,vcf_prefix,filterExpression,option_line,reference
     '''
 
     def _variant_filtering(self, node: WorkflowNode):
@@ -106,7 +108,7 @@ class GatkAdapter(BaseAdapter):
             "--disable_auto_index_creation_and_locking_when_reading_rods",
             node.params.get("option_line"), "-R", reference_path, "--variant",
             input_path.as_posix(), "--filterName",
-            "SNPFILTER", "--filterExpression", node.params.get("filterExpression"), "--out",
+            "SNPFILTER", "--filterExpression", node.params.get("filter_expression"), "--out",
             out_path.as_posix()
         ]
         node.commands.append(command)
@@ -115,9 +117,11 @@ class GatkAdapter(BaseAdapter):
     '''
     参数：input_dir:reference,vcf;;params:java_path,memory,tool_path,vcf_prefix
     '''
+
     def _select_variants(self, node: WorkflowNode):
         reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
-        input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf"
+        input_path: Path = node.input_dir.get(
+            "vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf"
         out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.vcf"
         command = [
             node.params.get("java_path"), "-Xmx", f"{node.params.get('memory')}g", "-jar",
@@ -125,6 +129,23 @@ class GatkAdapter(BaseAdapter):
             "--disable_auto_index_creation_and_locking_when_reading_rods",
             "-R", reference_path, "--variant", input_path.as_posix(), "-select", 'FILTER == "SNPFILTER"',
             "--invertSelect", "-o", out_path.as_posix()
+        ]
+        node.commands.append(command)
+        return node
+
+    '''
+    参数： input: reference,vcf;;params: reference vcf_prefix java_path tool_path memory
+    '''
+    def _varint_selection(self, node: WorkflowNode):
+        reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
+        input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.vcf"
+        output_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.vcf"
+        command = [
+            node.params.get("java_path"), "-Xmx", f"{node.params.get('memory')}g", "-jar",
+            node.params.get("tool_path"), "-T", "SelectVariants",
+            "--disable_auto_index_creation_and_locking_when_reading_rods", "-R",
+            reference_path, "-variant", input_path,
+            "selectType", "SNP", "-o", output_path
         ]
         node.commands.append(command)
         return node

@@ -1,0 +1,150 @@
+global:
+  flow_name: variant_calling
+  parallel : true
+nodes:
+  - id: 1
+    name: faidx
+    input_dir:
+      - reference: /home/work/input
+    output_dir: /home/work/input
+    log_dir: /home/work/log
+    tool: samtools
+    params:
+      - samtools_path: samtools
+      - reference: cow.chr1.fa
+      - tool_path: samtools
+
+  - id: 2
+    name: Create_sequence_dictionary
+    input_dir:
+      - reference: /home/work/input
+    output_dir: /home/work/input
+    log_dir: /home/work/log
+    tool: picard
+    params:
+      - java_path: java
+      - picard_path: /opt/picard.jar
+      - reference: cow.chr1.fa
+
+  - id: 3
+    name: local_realignment
+    input_dir:
+      - bam: /home/work/input
+    output_dir: /home/work/input
+    log_dir: /home/work/log
+    tool: samtools
+    params:
+      - tool_path: samtools
+      - th: 5
+
+  - id: 4
+    name: haplotype_caller
+    tool: gatk
+    input_dir:
+      - bam: /home/work/input
+      - reference: /home/work/input
+    params:
+      - java_path: java
+      - memory: 20
+      - tool_path: gatk
+      - th: 5
+      - reference: cow.chr1.fa
+    output_dir: /home/work/input
+    log_dir: /home/work/log
+    dependencies:
+      - 1
+      - 2
+      - 3
+
+  - id: 5
+    name: combine_gvcfs
+    tool: gatk
+    input_dir:
+      - reference: /home/work/input
+      - gvcf: /home/work/input
+    params:
+      - java_path: java
+      - memory: 20
+      - vcf_prefix: test
+      - tool_path: gatk
+      - reference: cow.chr1.fa
+    output_path: /home/work/input
+    log_dir: /home/work/log
+    dependencies:
+      - 4
+
+  - id: 6
+    name: genotyping
+    tool: gatk
+    input_dir:
+      - reference: /home/work/input
+      - vcf: /home/work/input
+    params:
+      - java_path: java
+      - memory: 20
+      - tool_path: gatk
+      - vcf_prefix: test
+      - reference: cow.chr1.fa
+    log_dir: /home/work/log
+    output_path: /home/work/input
+    dependencies:
+      - 5
+
+  - id: 7
+    name: varint_selection
+    tool: gatk
+    input_dir:
+      - reference: /home/work/input
+      - vcf: /home/work/input
+    log_dir: /home/work/log
+    output_path: /home/work/input
+    params:
+      - reference: cow.chr1.fa
+      - vcf_prefix: test
+      - java_path: java
+      - tool_path: gatk
+      - memory: 10
+    dependencies:
+      - 6
+
+  - id: 8
+    name: variant_filtering
+    tool: gatk
+    input_dir:
+      - reference: /home/work/input
+      - vcf: /home/work/input
+    log_dir: /home/work/log
+    output_path: /home/work/input
+    params:
+      - reference: cow.chr1.fa
+      - vcf_prefix: test
+      - java_path: java
+      - tool_path: gatk
+      - memory: 10
+      - filter_expression: default
+    dependencies:
+      - 7
+
+  - id: 9
+    name: elect_variants
+    tool: gatk
+    input_dir:
+      - reference: /home/work/input
+      - vcf: /home/work/input
+    log_dir: /home/work/log
+    output_path: /home/work/input\
+    params:
+      - reference: cow.chr1.fa
+      - vcf_prefix: test
+      - java_path: java
+      - tool_path: gatk
+      - memory: 10
+    dependencies:
+      - 8
+
+
+
+
+
+
+
