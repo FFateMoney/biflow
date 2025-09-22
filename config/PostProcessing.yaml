@@ -25,7 +25,8 @@ nodes:
     output_dir: /RUN_DOCKER/output/results/03_PostProcessing/02_Plink
     log_dir: /RUN_DOCKER/output/logs
     parallelize: false
-    dependencies: [1]
+    dependencies:
+      - 1
     params:
       - plink_path: /opt/conda/bin/plink
       - geno: 0.01
@@ -41,7 +42,8 @@ nodes:
     output_dir: /RUN_DOCKER/output/results/03_PostProcessing/03_Hapmap
     log_dir: /RUN_DOCKER/output/logs
     parallelize: false
-    dependencies: [1]
+    dependencies:
+
     params:
       - perl_path: /usr/bin/perl
       - script_path: /PAPipe/03_shipeiqi/config/vcf2HapMap.pl

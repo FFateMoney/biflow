@@ -3,10 +3,12 @@ from pathlib import Path
 
 from core.node import WorkflowNode
 
+#缺少adapt 01完成
 
 class Bowtie2Adapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
         super().__init__(config or {}, sample_data)
+
 
     def indexing(self, node: WorkflowNode):
         """构建Bowtie2索引"""

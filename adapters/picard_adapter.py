@@ -2,6 +2,8 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 from pathlib import Path
 
+#adapt修改为map形式，01结束 02结束
+
 class PicardAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
         super().__init__(config or {}, sample_data)
@@ -67,7 +69,7 @@ class PicardAdapter(BaseAdapter):
         commands = []
         in_dir = Path(node.input_dir["input_bam"])
         out_dir = Path(node.output_dir)
-        log_dir = Path("/RUN_DOCKER/output/logs")
+        log_dir = Path("/RUN_DOCKER/output/logs")  #不能写死
         for d in (out_dir, log_dir):
             d.mkdir(parents=True, exist_ok=True)
 
@@ -76,7 +78,7 @@ class PicardAdapter(BaseAdapter):
                 sample = f"{b}{s}"
                 in_bam = in_dir / f"{sample}.marked.sort.bam"
                 out_bam = out_dir / f"{sample}.addRG.marked.sort.bam"
-                logfile = log_dir / f"02_readgroup_{sample}.log"
+                logfile = log_dir / f"02_readgroup_{sample}.log"   #未使用的变量
 
                 commands.append(
                     [

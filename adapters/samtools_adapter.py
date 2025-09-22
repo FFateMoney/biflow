@@ -2,6 +2,8 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 from pathlib import Path
 
+# 01完成 02完成
+
 class SamtoolsAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
         super().__init__(config or {}, sample_data)
@@ -10,7 +12,6 @@ class SamtoolsAdapter(BaseAdapter):
         operation = node.name.lower()
         operation_map = {
             "batch_sorting" : self._build_sort,
-            "samtools_sort" : self._build_sort,
             "samtools_fadix": self._samtools_faidx
         }
         if operation not in operation_map:
