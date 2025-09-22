@@ -4,11 +4,10 @@ from pathlib import Path
 
 class BwaAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
-        super().__init__(config or {}, sample_data)
+        super().__init__(config, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
         operation = node.name.lower()
-
         if operation in ("indexing", "bwa_index"):
             return self._build_index(node)
         if operation in ("batch_mapping", "bwa_mem"):

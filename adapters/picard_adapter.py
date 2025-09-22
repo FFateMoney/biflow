@@ -4,7 +4,7 @@ from pathlib import Path
 
 class PicardAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
-        super().__init__(config or {}, sample_data)
+        super().__init__(config, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
         name = node.name.lower()
@@ -26,9 +26,7 @@ class PicardAdapter(BaseAdapter):
         commands = []
         in_dir = Path(node.input_dir["input_bam"])
         out_dir = Path(node.output_dir)
-        log_dir = Path("/RUN_DOCKER/output/logs")
-        for d in (out_dir, log_dir):
-            d.mkdir(parents=True, exist_ok=True)
+        out_dir.mkdir(parents=True, exist_ok=True)
 
         for b in breeds:
             for s in samples:
@@ -36,7 +34,6 @@ class PicardAdapter(BaseAdapter):
                 in_bam = in_dir / f"{sample}.sort.bam"
                 out_bam = out_dir / f"{sample}.marked.sort.bam"
                 metrics = out_dir / f"{sample}.dup_metrics.txt"
-                logfile = log_dir / f"02_markdup_{sample}.log"
 
                 commands.append(
                     [
@@ -67,16 +64,13 @@ class PicardAdapter(BaseAdapter):
         commands = []
         in_dir = Path(node.input_dir["input_bam"])
         out_dir = Path(node.output_dir)
-        log_dir = Path("/RUN_DOCKER/output/logs")
-        for d in (out_dir, log_dir):
-            d.mkdir(parents=True, exist_ok=True)
+        out_dir.mkdir(parents=True, exist_ok=True)
 
         for b in breeds:
             for s in samples:
                 sample = f"{b}{s}"
                 in_bam = in_dir / f"{sample}.marked.sort.bam"
                 out_bam = out_dir / f"{sample}.addRG.marked.sort.bam"
-                logfile = log_dir / f"02_readgroup_{sample}.log"
 
                 commands.append(
                     [
