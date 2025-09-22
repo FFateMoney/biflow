@@ -4,6 +4,7 @@ from pathlib import Path
 from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 
+#完成
 
 class GatkAdapter(BaseAdapter):
     def adapt(self, node: WorkflowNode) -> WorkflowNode:

@@ -3,6 +3,7 @@ from pathlib import Path
 
 from core.node import WorkflowNode
 
+#缺少adapt 01完成
 
 class Bowtie2Adapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):

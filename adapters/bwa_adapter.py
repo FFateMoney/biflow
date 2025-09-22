@@ -2,6 +2,7 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 from pathlib import Path
 
+#把adapt改成map形式 01完成
 class BwaAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
         super().__init__(config, sample_data)

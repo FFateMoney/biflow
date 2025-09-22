@@ -3,6 +3,7 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 from pathlib import Path
 
+#把目前的adapt拆分，用其它函数写具体的任务
 class HapmapAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
         super().__init__(config or {}, sample_data)

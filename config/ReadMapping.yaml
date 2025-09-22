@@ -26,7 +26,8 @@ nodes:
     tool: bwa_mem
     log_dir: /RUN_DOCKER/output/logs
     parallelize: true
-    dependencies: [1]
+    dependencies:
+      - 1
     params:
       - bwa_path: "/opt/conda/bin/bwa"
       - threads: 4
@@ -43,7 +44,8 @@ nodes:
     tool: samtools_sort
     log_dir: /RUN_DOCKER/output/logs
     parallelize: true
-    dependencies: [2]
+    dependencies:
+      - 2
     params:
       - samtools_path: "/opt/conda/bin/samtools"
       - threads: 4
@@ -58,7 +60,8 @@ nodes:
     tool: picard_markduplicates
     log_dir: /RUN_DOCKER/output/logs
     parallelize: true
-    dependencies: [3]
+    dependencies:
+      - 3
     params:
       - java_path: "/opt/conda/bin/java"
       - picard_path:  "/opt/conda/pkgs/picard-2.27.5-hdfd78af_0/share/picard-2.27.5-0/picard.jar"
@@ -74,7 +77,8 @@ nodes:
     tool: picard_addrg
     log_dir: /RUN_DOCKER/output/logs
     parallelize: true
-    dependencies: [4]
+    dependencies:
+      - 4
     params:
       - java_path: "/opt/conda/bin/java"
       - picard_path:  "/opt/conda/pkgs/picard-2.27.5-hdfd78af_0/share/picard-2.27.5-0/picard.jar"

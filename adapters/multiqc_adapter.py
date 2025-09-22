@@ -4,6 +4,7 @@ from pathlib import Path
 from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 
+#compelete
 
 class MultiQCAdapter(BaseAdapter):
     """MultiQC报告生成适配器 - 基于Stat_calculator.pl的multiqc函数"""

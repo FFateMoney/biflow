@@ -3,6 +3,7 @@ from pathlib import Path
 from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 
+#compelete
 
 class TrimGaloreAdapter(BaseAdapter):
     """Trim Galore序列修剪适配器 - 基于Read_trimmer.pl的TrimGalore函数"""

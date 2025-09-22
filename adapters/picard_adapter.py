@@ -2,6 +2,8 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 from pathlib import Path
 
+#adapt修改为map形式，01结束 02结束
+
 class PicardAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
         super().__init__(config, sample_data)
