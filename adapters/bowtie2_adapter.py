@@ -1,37 +1,53 @@
 from adapters.base_adapter import BaseAdapter
-from core.node import WorkflowNode
 from pathlib import Path
+
+from core.node import WorkflowNode
+
 
 class Bowtie2Adapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
-        super().__init__(config, sample_data)
+        super().__init__(config or {}, sample_data)
 
-    def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()
+    def indexing(self, node: WorkflowNode):
+        """构建Bowtie2索引"""
+        bowtie2_path = node.params["bowtie2_path"]
+        threads = node.params.get("threads", 4)
+        ref_path = Path(node.params["reference"])
+        index_dir = Path(node.output_dir) / "ref"
+        index_dir.mkdir(parents=True, exist_ok=True)
 
-        if operation == "indexing":
-            ref_key = "reference"
-            if isinstance(node.input_dir, dict):
-                ref_path = Path(node.input_dir[ref_key])
-            else:
-                ref_path = Path(node.input_dir)
+        cmd = [
+            bowtie2_path,
+            "-build",
+            str(ref_path),
+            str(index_dir / "ref"),
+            f"--threads {threads}",
+        ]
+        node.commands = [cmd]
+        return node
 
-            index_dir = Path(node.output_dir)
-            index_dir.mkdir(parents=True, exist_ok=True)
+    def mapping(self, node: WorkflowNode):
+        """执行Bowtie2比对"""
+        bowtie2_path = node.params["bowtie2_path"]
+        threads = node.params.get("threads", 4)
+        index_dir = Path(node.input_dir["index"])
+        read1 = Path(node.input_dir["read1"])
+        read2 = Path(node.input_dir["read2"])
+        output_dir = Path(node.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-            node.commands = [
-                [
-                    "bowtie2-build",
-                    "--threads",
-                    str(node.params.get("threads", 4)),
-                    str(ref_path),
-                    str(index_dir / "ref")
-                ]
-            ]
-            return node
-
-        elif operation == "mapping":
-            raise NotImplementedError("Bowtie2 mapping not implemented yet")
-
-        else:
-            raise ValueError(f"Unsupported Bowtie2 operation: {operation}")
+        cmd = [
+            bowtie2_path,
+            "-p",
+            str(threads),
+            "-x",
+            str(index_dir / "ref"),
+            "-1",
+            str(read1),
+            "-2",
+            str(read2),
+            "-S",
+            str(output_dir / f"{node.params['sample']}.sam"),
+        ]
+        node.commands = [cmd]
+        return node
