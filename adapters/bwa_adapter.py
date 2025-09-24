@@ -3,19 +3,27 @@ from core.node import WorkflowNode
 from pathlib import Path
 
 #把adapt改成map形式 01完成
+
 class BwaAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
-        super().__init__(config, sample_data)
+        super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()
-        if operation in ("indexing", "bwa_index"):
-            return self._build_index(node)
-        if operation in ("batch_mapping", "bwa_mem"):
-            return self._build_mem(node)
-        raise ValueError(f"Unsupported BWA operation: {operation}")
+        operation = node.name.lower()  # node的name即是操作
 
-    def _build_index(self, node: WorkflowNode):
+        # 映射操作名到函数
+        operation_map = {
+            "index": self._index,
+            "mem" : self._mem
+        }
+
+        if operation not in operation_map:
+            raise ValueError(f"Unsupported bwa operation: {operation}")
+
+        return operation_map[operation](node)
+
+
+    def _index(self, node: WorkflowNode):
         bwa_path = node.params["bwa_path"]
         ref_path = Path(node.params["reference"])
         output_prefix = Path(node.output_dir) / node.params["prefix"]
@@ -32,7 +40,7 @@ class BwaAdapter(BaseAdapter):
         ]
         return node
 
-    def _build_mem(self, node: WorkflowNode):
+    def _mem(self, node: WorkflowNode):
         bwa_path = node.params["bwa_path"]
         index_prefix = node.params["index_prefix"]
         platform = node.params["platform"]

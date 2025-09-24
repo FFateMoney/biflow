@@ -6,19 +6,24 @@ from pathlib import Path
 
 class PicardAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
-        super().__init__(config, sample_data)
+        super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        name = node.name.lower()
-        if name == "batch_mark_duplicates":
-            return self._build_mark_duplicates(node)
-        if name == "batch_add_read_groups":
-            return self._build_add_read_groups(node)
-        if name == "picard_create_sequence_dictionary":
-            return self._build_create_sequence_dictionary(node)
-        raise ValueError(f"Unsupported Picard operation: {node.name}")
+        operation = node.name.lower()  # node的name即是操作
 
-    def _build_mark_duplicates(self, node: WorkflowNode):
+        # 映射操作名到函数
+        operation_map = {
+            "mark_duplicates": self._mark_duplicates,
+            "add_read_groups": self._add_read_groups,
+            "create_sequence_dictionary": self._create_sequence_dictionary
+        }
+
+        if operation not in operation_map:
+            raise ValueError(f"Unsupported picard operation: {operation}")
+
+        return operation_map[operation](node)
+
+    def _mark_duplicates(self, node: WorkflowNode):
         java = node.params.get("java_path", "java")
         jar = node.params["picard_path"]
         mem = node.params.get("memory", 4)
@@ -28,7 +33,9 @@ class PicardAdapter(BaseAdapter):
         commands = []
         in_dir = Path(node.input_dir["input_bam"])
         out_dir = Path(node.output_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
+        log_dir = Path("/RUN_DOCKER/output/logs")
+        for d in (out_dir, log_dir):
+            d.mkdir(parents=True, exist_ok=True)
 
         for b in breeds:
             for s in samples:
@@ -36,6 +43,7 @@ class PicardAdapter(BaseAdapter):
                 in_bam = in_dir / f"{sample}.sort.bam"
                 out_bam = out_dir / f"{sample}.marked.sort.bam"
                 metrics = out_dir / f"{sample}.dup_metrics.txt"
+                logfile = log_dir / f"02_markdup_{sample}.log"
 
                 commands.append(
                     [
@@ -54,7 +62,7 @@ class PicardAdapter(BaseAdapter):
         node.commands = commands
         return node
 
-    def _build_add_read_groups(self, node: WorkflowNode):
+    def _add_read_groups(self, node: WorkflowNode):
         java = node.params.get("java_path", "java")
         jar = node.params["picard_path"]
         mem = node.params.get("memory", 4)
@@ -66,13 +74,16 @@ class PicardAdapter(BaseAdapter):
         commands = []
         in_dir = Path(node.input_dir["input_bam"])
         out_dir = Path(node.output_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
+        log_dir = Path("/RUN_DOCKER/output/logs")  #不能写死
+        for d in (out_dir, log_dir):
+            d.mkdir(parents=True, exist_ok=True)
 
         for b in breeds:
             for s in samples:
                 sample = f"{b}{s}"
                 in_bam = in_dir / f"{sample}.marked.sort.bam"
                 out_bam = out_dir / f"{sample}.addRG.marked.sort.bam"
+                logfile = log_dir / f"02_readgroup_{sample}.log"   #未使用的变量
 
                 commands.append(
                     [
@@ -93,7 +104,7 @@ class PicardAdapter(BaseAdapter):
         node.commands = commands
         return node
 
-    def _build_create_sequence_dictionary(self, node: WorkflowNode):
+    def _create_sequence_dictionary(self, node: WorkflowNode):
         java = node.params.get("java_path", "java")
         jar = node.params["picard_path"]
         ref_name = node.params["reference"]

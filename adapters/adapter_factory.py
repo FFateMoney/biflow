@@ -1,33 +1,19 @@
+from adapters import bowtie2_adapter, bwa_adapter, fastqc_adapter, gatk_adapter, hapmap_adapter, multiqc_adapter, \
+    picard_adapter, plink_adapter, samtools_adapter, trimgalore_adapter
 from core.node import WorkflowNode
-#from adapters.samtools_adapter import SamtoolsAdapter
-from adapters.test_adapter import TestAdapter
-#from adapters.fastqc_adapter import FastQCAdapter
-#from adapters.multiqc_adapter import MultiQCAdapter
-#from adapters.trimgalore_adapter import TrimGaloreAdapter
-#from adapters.bwa_adapter import BwaAdapter
-#from adapters.bowtie2_adapter import Bowtie2Adapter
-#from adapters.picard_adapter import PicardAdapter
-from adapters.vcftools_adapter import VcftoolsAdapter
-from adapters.plink_adapter import PlinkAdapter
-from adapters.hapmap_adapter import HapmapAdapter
+
 
 ADAPTER_MAP = {
-    #"samtools": SamtoolsAdapter,
-   # "samtools_sort": SamtoolsAdapter,
-    "test": TestAdapter,
-   # "fastqc": FastQCAdapter,
-   #"multiqc": MultiQCAdapter,
-   # "trim_galore": TrimGaloreAdapter,
-    #"bwa_index": BwaAdapter,
-    #"bwa_mem": BwaAdapter,
-    #"bwa": BwaAdapter,
-    #"bowtie2": Bowtie2Adapter,
-    #"picard_markduplicates": PicardAdapter,
-    #"picard_addrg": PicardAdapter,
-    #"picard": PicardAdapter,
-    "vcftools": VcftoolsAdapter,
-    "plink": PlinkAdapter,
-    "hapmap": HapmapAdapter,
+    "bowtie2" : bowtie2_adapter.Bowtie2Adapter,
+    "bwa" : bwa_adapter.BwaAdapter,
+    "fastqc" : fastqc_adapter.FastQCAdapter,
+    "gatk" : gatk_adapter.GatkAdapter,
+    "hapmap": hapmap_adapter.HapmapAdapter,
+    "multiqc": multiqc_adapter.MultiQCAdapter,
+    "picard" : picard_adapter.PicardAdapter,
+    "plink": plink_adapter.PlinkAdapter,
+    "samtools": samtools_adapter.SamtoolsAdapter,
+    "trimagalore" : trimgalore_adapter.TrimGaloreAdapter
 }
 
 def get_adapter(node: WorkflowNode):

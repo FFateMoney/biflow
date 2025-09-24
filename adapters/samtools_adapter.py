@@ -11,9 +11,9 @@ class SamtoolsAdapter(BaseAdapter):
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
         operation = node.name.lower()
         operation_map = {
-            "batch_sorting" : self._build_sort,
-            "samtools_sort" : self._build_sort,
-            "samtools_fadix": self._samtools_faidx
+            "sorting" : self._build_sort,
+            "faidx": self._samtools_faidx,
+            "local_realignment" : self._samtools_local_realignment
         }
         if operation not in operation_map:
             raise ValueError(f"Unsupported samtools operation: {operation}")
@@ -59,17 +59,18 @@ class SamtoolsAdapter(BaseAdapter):
         return node
 
     def _samtools_local_realignment(self,node: WorkflowNode):
-        samtools_path: Path = node.params.get("tool_path")
-        input_path: Path = node.input_dir.get("bam")
+        samtools_path: Path = Path(node.params.get("tool_path"))
+        input_path: Path =  Path(node.input_dir.get("bam"))
         output_path = node.output_dir
         bam_files = list(Path(input_path).glob("*.bam"))
-        th = node.params.get("th")
+        th= node.params.get("th")
+
         commands = []
         for bam in bam_files:
-            bam = input_path/bam
             bam_str = bam.as_posix()
             output = output_path/bam_str.replace("bam","bai")
-            command = [samtools_path,"index","-@",th,bam,output]
+            command = [samtools_path.as_posix(),"index","-@",th,bam.as_posix(),output.as_posix()]
+            print(command)
             commands.append(command)
         node.commands = commands
         return node
