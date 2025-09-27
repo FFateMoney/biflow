@@ -7,8 +7,8 @@ global:
 
 nodes:
   - id: 1
-    name: vcf_filter
     tool: vcftools
+    subcommand: filter
     input_dir:
       vcf: /RUN_DOCKER/input/vcf/VariantCalling/ALL.variant.combined.GT.SNP.flt.vcf.gz
     output_dir: /RUN_DOCKER/output/results/03_PostProcessing/01_VcfFilter
@@ -18,8 +18,8 @@ nodes:
       - vcftools_path: /opt/conda/bin/vcftools
 
   - id: 2
-    name: plink_qc
     tool: plink
+    subcommand: plink
     input_dir:
       vcf: /RUN_DOCKER/output/results/03_PostProcessing/01_VcfFilter/ALL.variant.combined.GT.SNP.flt.filtered.vcf.recode.vcf.gz
     output_dir: /RUN_DOCKER/output/results/03_PostProcessing/02_Plink
@@ -35,8 +35,8 @@ nodes:
       - chr-set: 1
 
   - id: 3
-    name: vcf2hapmap
     tool: hapmap
+    subcommand: vcf2hapmap
     input_dir:
       vcf: /RUN_DOCKER/output/results/03_PostProcessing/01_VcfFilter/ALL.variant.combined.GT.SNP.flt.filtered.vcf.recode.vcf.gz
     output_dir: /RUN_DOCKER/output/results/03_PostProcessing/03_Hapmap

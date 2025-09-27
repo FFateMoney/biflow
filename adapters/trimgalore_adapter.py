@@ -9,7 +9,7 @@ class TrimGaloreAdapter(BaseAdapter):
     """Trim Galore序列修剪适配器 - 基于Read_trimmer.pl的TrimGalore函数"""
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()
+        operation = node.subcommand.lower()
 
         operation_map = {
             "trim_galore": self._trim_galore

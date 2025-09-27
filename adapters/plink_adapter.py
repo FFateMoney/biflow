@@ -9,7 +9,7 @@ class PlinkAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
         super().__init__(config or {}, sample_data)
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()  # node的name即是操作
+        operation = node.subcommand.lower()  # node的name即是操作
 
         # 映射操作名到函数
         operation_map = {

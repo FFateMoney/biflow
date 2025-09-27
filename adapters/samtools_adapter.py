@@ -9,9 +9,9 @@ class SamtoolsAdapter(BaseAdapter):
         super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()
+        operation = node.subcommand.lower()
         operation_map = {
-            "sorting" : self._build_sort,
+            "sort" : self._sort,
             "faidx": self._samtools_faidx,
             "local_realignment" : self._samtools_local_realignment
         }
@@ -19,7 +19,7 @@ class SamtoolsAdapter(BaseAdapter):
             raise ValueError(f"Unsupported samtools operation: {operation}")
         return operation_map[operation](node)
 
-    def _build_sort(self, node: WorkflowNode):
+    def _sort(self, node: WorkflowNode):
         samtools_path = node.params["samtools_path"]
         breeds = node.params.get("breeds") or []
         samples = node.params.get("samples") or []
@@ -58,7 +58,7 @@ class SamtoolsAdapter(BaseAdapter):
         node.commands.append(command)
         return node
 
-    def _samtools_local_realignment(self,node: WorkflowNode):
+    def _local_realignment(self,node: WorkflowNode):
         samtools_path: Path = Path(node.params.get("tool_path"))
         input_path: Path =  Path(node.input_dir.get("bam"))
         output_path = node.output_dir

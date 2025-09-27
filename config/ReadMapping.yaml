@@ -6,11 +6,11 @@ global:
 
 nodes:
   - id: 1
-    name: indexing
+    tool: bwa
+    subcommand: index
     input_dir:
       - reference: /RUN_DOCKER/input/ref/cow.chr1.fa
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing
-    tool: bwa_index
     log_dir: /RUN_DOCKER/output/logs
     params:
       - bwa_path: "/opt/conda/bin/bwa"
@@ -19,11 +19,11 @@ nodes:
       - prefix: "ref"
 
   - id: 2
-    name: batch_mapping
+    tool: bwa
+    subcommand: mem
     input_dir:
       - base: /RUN_DOCKER/input/TrimmedData_repaired
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
-    tool: bwa_mem
     log_dir: /RUN_DOCKER/output/logs
     parallelize: true
     dependencies:
@@ -37,11 +37,11 @@ nodes:
       - samples: ["1", "2", "3", "4", "5"]
 
   - id: 3
-    name: batch_sorting
+    tool: samtools
+    subcommand: sort
     input_dir:
       - input_sam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
-    tool: samtools_sort
     log_dir: /RUN_DOCKER/output/logs
     parallelize: true
     dependencies:
@@ -53,11 +53,11 @@ nodes:
       - samples: ["1", "2", "3", "4", "5"]
 
   - id: 4
-    name: batch_mark_duplicates
+    tool: picard
+    subcommand: mark_duplicates
     input_dir:
       - input_bam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
-    tool: picard_markduplicates
     log_dir: /RUN_DOCKER/output/logs
     parallelize: true
     dependencies:
@@ -70,11 +70,11 @@ nodes:
       - samples: ["1", "2", "3", "4", "5"]
 
   - id: 5
-    name: batch_add_read_groups
+    tool: picard
+    subcommand: add_read_groups
     input_dir:
       - input_bam: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
     output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
-    tool: picard_addrg
     log_dir: /RUN_DOCKER/output/logs
     parallelize: true
     dependencies:

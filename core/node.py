@@ -5,7 +5,7 @@ from typing import List
 class WorkflowNode:
     def __init__(
         self,
-        name: str,
+        subcommand: str,
         id: numbers,
         commands: List,
         input_dir,
@@ -14,10 +14,9 @@ class WorkflowNode:
         params: dict,
         tool: str,
         parallelize: bool = False,
-        breeds: list = None,
-        samples: list = None,
+
     ):
-        self.name = name
+        self.subcommand = subcommand
         self.id = id
         self.commands = commands
         self.params = params
@@ -26,20 +25,17 @@ class WorkflowNode:
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.log_dir = log_dir
-        self.breeds = breeds or []
-        self.samples = samples or []
+
 
     def __repr__(self):
         return (
             f"WorkflowNode(id='{self.id}', "
-            f"name='{self.name}', "
+            f"subcommand='{self.subcommand}', "
             f"tool='{self.tool}', "
             f"commands={self.commands}, "
             f"parallelize={self.parallelize}, "
             f"log_dir='{self.log_dir}', "
             f"input_dir={self.input_dir},"
             f"output_dir={self.output_dir},"
-            f"breeds={self.breeds},"
-            f"samples={self.samples},"
             f"params={self.params})"
         )

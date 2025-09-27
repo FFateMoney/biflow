@@ -5,44 +5,44 @@ global:
   output_dir: /work
 nodes:
   - id: 1
-    name: faidx
+    tool: samtools
+    subcommand: faidx
     input_dir:
       - reference: /work/input/ref
     output_dir: /work/input/ref
     log_dir: /work/log/variant_calling
-    tool: samtools
     params:
       - samtools_path: samtools
       - reference: cow.chr1.fa
       - tool_path: samtools
 
   - id: 2
-    name: create_sequence_dictionary
+    tool: picard
+    subcommand: create_sequence_dictionary
     input_dir:
       - reference: /work/input/ref
     output_dir: /work/input/ref
     log_dir: /work/log/variant_calling
-    tool: picard
     params:
       - java_path: java
       - picard_path: /opt/picard.jar
       - reference: cow.chr1.fa
 
   - id: 3
-    name: local_realignment
+    tool: samtools
+    subcommand: local_realignment
     input_dir:
       - bam: /work/output/01
     output_dir: /work/output/01
     log_dir: /work/log/variant_calling
-    tool: samtools
     params:
       - tool_path: samtools
       - th: "5"
 
   - id: 4
-    name: haplotype_caller
-    parallelize: true
     tool: gatk
+    subcommand: haplotype_caller
+    parallelize: true
     input_dir:
       - bam: /work/output/01
       - reference: /work/input/ref
@@ -60,8 +60,8 @@ nodes:
       - 3
 
   - id: 5
-    name: combine_gvcfs
     tool: gatk
+    subcommand: combine_gvcfs
     input_dir:
       - reference: /work/input/ref
       - gvcf: /work/output/02
@@ -77,8 +77,8 @@ nodes:
       - 4
 
   - id: 6
-    name: genotyping
     tool: gatk
+    subcommand: genotyping
     input_dir:
       - reference: /work/input/ref
       - vcf: /work/output/02
@@ -94,8 +94,8 @@ nodes:
       - 5
 
   - id: 7
-    name: varint_selection
     tool: gatk
+    subcommand: varint_selection
     input_dir:
       - reference: /work/input/ref
       - vcf: /work/output/02
@@ -111,8 +111,8 @@ nodes:
       - 6
 
   - id: 8
-    name: variant_filtering
     tool: gatk
+    subcommand: variant_filtering
     input_dir:
       - reference: /work/input/ref
       - vcf: /work/output/02
@@ -129,8 +129,8 @@ nodes:
       - 7
 
   - id: 9
-    name: select_variants
     tool: gatk
+    subcommand: select_variants
     input_dir:
       - reference: /work/input/ref
       - vcf: /work/output/02

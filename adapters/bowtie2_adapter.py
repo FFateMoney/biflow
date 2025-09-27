@@ -7,7 +7,7 @@ from core.node import WorkflowNode
 
 class Bowtie2Adapter(BaseAdapter):
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()  # node的name即是操作
+        operation = node.subcommand.lower()  # node的name即是操作
 
         # 映射操作名到函数
         operation_map = {

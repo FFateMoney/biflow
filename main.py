@@ -6,7 +6,7 @@ from executor.executor import execute_graph
 
 '''
 TODO： 
-1、把name改为operator
+1、把name改为operator done
 2、统一参数风格
 '''
 def main():
