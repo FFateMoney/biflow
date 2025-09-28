@@ -11,11 +11,11 @@ class VcftoolsAdapter(BaseAdapter):
         super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()  # node的name即是操作
+        operation = node.subcommand.lower()  # node的name即是操作
 
         # 映射操作名到函数
         operation_map = {
-           "vcf_filt":self._vcf_filt
+           "filter":self._filter
         }
 
         if operation not in operation_map:
@@ -23,9 +23,9 @@ class VcftoolsAdapter(BaseAdapter):
 
         return operation_map[operation](node)
 
-    def _vcf_filt(self, node: WorkflowNode) -> WorkflowNode:
+    def _filter(self, node: WorkflowNode) -> WorkflowNode:
         vcftools_path = node.params["vcftools_path"]
-        vcf_in = Path(node.input_dir["vcf"])
+        vcf_in = Path(node.input_dir["vcf"])/f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.vcf.gz"
         out_dir = Path(node.output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         

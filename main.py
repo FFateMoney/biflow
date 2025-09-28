@@ -6,10 +6,9 @@ from executor.executor import execute_graph
 
 '''
 TODO： 
-1、把name改为operator
+1、把name改为operator done
 2、统一参数风格
-3、修改路径写死的部分
-4、制定全流程图
+
 '''
 def main():
     parser = argparse.ArgumentParser()

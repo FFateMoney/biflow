@@ -8,7 +8,7 @@ from core.node import WorkflowNode
 
 class GatkAdapter(BaseAdapter):
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()  # node的name即是操作
+        operation = node.subcommand.lower()  # node的name即是操作
 
         # 映射操作名到函数
         operation_map = {
@@ -116,8 +116,8 @@ class GatkAdapter(BaseAdapter):
 
     def _variant_filtering(self, node: WorkflowNode):
         reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
-        input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.vcf.gz"
-        out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf.gz"
+        input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.vcf"
+        out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf"
         command = [
             node.params.get("tool_path"),  # 一般就是 "gatk"
             "--java-options", f"-Xmx{node.params.get('memory')}g",
@@ -145,15 +145,14 @@ class GatkAdapter(BaseAdapter):
         input_path: Path = node.input_dir.get(
             "vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf.gz"
         out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.vcf.gz"
-
         command = [
-            node.params.get("tool_path"),  # 一般就是 "gatk"
+            node.params.get("tool_path"),
             "--java-options", f"-Xmx{node.params.get('memory')}g",
             "SelectVariants",
             "-R", reference_path,
             "-V", input_path.as_posix(),
             "-O", out_path.as_posix(),
-            "--select", "vc.isFiltered()",
+            "--select-expr", 'vc.isFiltered()',  # 选出已标记为 FILTER 的位点
             "--invert-select"  # 取反，保留未被过滤的
         ]
 

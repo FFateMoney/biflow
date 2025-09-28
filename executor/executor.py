@@ -49,18 +49,18 @@ def execute_node(node: WorkflowNode, workflow_logger: logging.Logger):
     node = adapter.adapt(node)
     print(node.__repr__())
 
-    node_dir = node.log_dir / f"{node.name}({node.id})"
+    node_dir = node.log_dir / f"{node.subcommand}({node.id})"
     ensure_dir(node_dir)
     run_log_path = node_dir / "run.log"
     status_path = node_dir / "status.log"
 
-    workflow_logger.info(f"{timestamp()} 开始运行节点：{node.name}({node.id})")
+    workflow_logger.info(f"{timestamp()} 开始运行节点：{node.subcommand}({node.id})")
 
     commands = [node.commands] if isinstance(node.commands[0], str) else node.commands
     status = load_status(status_path)
 
     if status["completed"]:
-        workflow_logger.info(f"{timestamp()} 跳过节点：{node.name}({node.id})，已完成")
+        workflow_logger.info(f"{timestamp()} 跳过节点：{node.subcommand}({node.id})，已完成")
         return
 
     try:
@@ -86,9 +86,9 @@ def execute_node(node: WorkflowNode, workflow_logger: logging.Logger):
                 save_status(status_path, completed=False, completed_cmds=i + 1)
             save_status(status_path, completed=True, completed_cmds=len(commands))
 
-        workflow_logger.info(f"{timestamp()} 节点 {node.name}({node.id}) 执行完成")
+        workflow_logger.info(f"{timestamp()} 节点 {node.subcommand}({node.id}) 执行完成")
     except Exception as e:
-        workflow_logger.error(f"{timestamp()} 节点 {node.name}({node.id}) 执行失败，请查看 {run_log_path}")
+        workflow_logger.error(f"{timestamp()} 节点 {node.subcommand}({node.id}) 执行失败，请查看 {run_log_path}")
         raise
 
 def execute_graph(G: nx.DiGraph):

@@ -5,11 +5,12 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 
 #compelete
+
 class MultiQCAdapter(BaseAdapter):
     """MultiQC报告生成适配器 - 基于Stat_calculator.pl的multiqc函数"""
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()
+        operation = node.subcommand.lower()
 
         operation_map = {
             "multiqc": self._multiqc

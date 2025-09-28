@@ -1,5 +1,5 @@
 from adapters import bowtie2_adapter, bwa_adapter, fastqc_adapter, gatk_adapter, hapmap_adapter, multiqc_adapter, \
-    picard_adapter, plink_adapter, samtools_adapter, trimgalore_adapter
+    picard_adapter, plink_adapter, samtools_adapter, trimgalore_adapter, vcftools_adapter
 from core.node import WorkflowNode
 
 
@@ -13,7 +13,8 @@ ADAPTER_MAP = {
     "picard" : picard_adapter.PicardAdapter,
     "plink": plink_adapter.PlinkAdapter,
     "samtools": samtools_adapter.SamtoolsAdapter,
-    "trimagalore" : trimgalore_adapter.TrimGaloreAdapter
+    "trim_galore" : trimgalore_adapter.TrimGaloreAdapter,
+    "vcftools": vcftools_adapter.VcftoolsAdapter
 }
 
 def get_adapter(node: WorkflowNode):

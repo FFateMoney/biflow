@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 import networkx as nx
 
-from adapters.adapter_factory import get_adapter
 from core.node import WorkflowNode
+
 
 def build_graph(config_dict: Dict) -> nx.DiGraph:
     G = nx.DiGraph()
@@ -36,7 +36,7 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
     id_to_node = {}
     for node_cfg in node_defs:
         node_id = str(node_cfg.get("id"))
-        name = node_cfg.get("name")
+        subcommand = node_cfg.get("subcommand")
         tool = node_cfg.get("tool")
         input_dir = node_cfg.get("input_dir")
         output_dir = node_cfg.get("output_dir")
@@ -49,13 +49,13 @@ def built_nodes(config_dict: Dict) -> Dict[str, WorkflowNode]:
             if isinstance(item, dict):
                 params.update(item)
             else:
-                raise TypeError(f"Invalid param item in node '{name}': {item}")
+                raise TypeError(f"Invalid param item in node '{subcommand}': {item}")
 
         processed_input_dir = built_input_path(input_dir)
 
         node = WorkflowNode(
             id=node_id,
-            name=name,
+            subcommand=subcommand,
             tool=tool,
             commands=[],
             input_dir=processed_input_dir,

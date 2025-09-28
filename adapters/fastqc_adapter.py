@@ -5,11 +5,12 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 
 #compelete
+
 class FastQCAdapter(BaseAdapter):
     """FastQC质量控制适配器 - 基于Stat_calculator.pl的fastqc函数"""
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()
+        operation = node.subcommand.lower()
 
         operation_map = {
             "fastqc": self._fastqc
