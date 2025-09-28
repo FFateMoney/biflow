@@ -9,16 +9,21 @@ class PicardAdapter(BaseAdapter):
         super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        name = node.name.lower()
-        if name == "batch_mark_duplicates":
-            return self._build_mark_duplicates(node)
-        if name == "batch_add_read_groups":
-            return self._build_add_read_groups(node)
-        if name == "picard_create_sequence_dictionary":
-            return self._build_create_sequence_dictionary(node)
-        raise ValueError(f"Unsupported Picard operation: {node.name}")
+        operation = node.name.lower()  # node的name即是操作
 
-    def _build_mark_duplicates(self, node: WorkflowNode):
+        # 映射操作名到函数
+        operation_map = {
+            "mark_duplicates": self._mark_duplicates,
+            "add_read_groups": self._add_read_groups,
+            "create_sequence_dictionary": self._create_sequence_dictionary
+        }
+
+        if operation not in operation_map:
+            raise ValueError(f"Unsupported picard operation: {operation}")
+
+        return operation_map[operation](node)
+
+    def _mark_duplicates(self, node: WorkflowNode):
         java = node.params.get("java_path", "java")
         jar = node.params["picard_path"]
         mem = node.params.get("memory", 4)
@@ -57,7 +62,7 @@ class PicardAdapter(BaseAdapter):
         node.commands = commands
         return node
 
-    def _build_add_read_groups(self, node: WorkflowNode):
+    def _add_read_groups(self, node: WorkflowNode):
         java = node.params.get("java_path", "java")
         jar = node.params["picard_path"]
         mem = node.params.get("memory", 4)
@@ -99,7 +104,7 @@ class PicardAdapter(BaseAdapter):
         node.commands = commands
         return node
 
-    def _build_create_sequence_dictionary(self, node: WorkflowNode):
+    def _create_sequence_dictionary(self, node: WorkflowNode):
         java = node.params.get("java_path", "java")
         jar = node.params["picard_path"]
         ref_name = node.params["reference"]

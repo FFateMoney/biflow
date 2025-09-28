@@ -93,17 +93,18 @@ def execute_node(node: WorkflowNode, workflow_logger: logging.Logger):
 
 def execute_graph(G: nx.DiGraph):
     parallel_nodes = G.graph.get("parallel", False)
-    workflow_name = G.graph.get("flow_name", "workflow")
-    log_dir = Path(G.graph.get("log_dir", "logs"))
+    workflow_name = G.graph.get("flow_name", "undefined_workflow")
+    df_log_dir = Path("/work/log") / workflow_name
+    log_dir = Path(G.graph.get("log_dir", df_log_dir))
     ensure_dir(log_dir)
 
     workflow_log_path = log_dir / f"{workflow_name}.log"
 
-    logger = logging.getLogger("workflow")
+    logger = logging.getLogger(workflow_name)
     logger.setLevel(logging.INFO)
     logger.handlers.clear()
 
-    handler = logging.FileHandler(workflow_log_path, mode="a", encoding="utf-8")
+    handler = logging.FileHandler(workflow_log_path, mode="w", encoding="utf-8")
     handler.setFormatter(logging.Formatter("%(message)s"))
     logger.addHandler(handler)
 

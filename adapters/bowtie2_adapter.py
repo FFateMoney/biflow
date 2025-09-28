@@ -6,6 +6,20 @@ from core.node import WorkflowNode
 #缺少adapt 01完成
 
 class Bowtie2Adapter(BaseAdapter):
+    def adapt(self, node: WorkflowNode) -> WorkflowNode:
+        operation = node.name.lower()  # node的name即是操作
+
+        # 映射操作名到函数
+        operation_map = {
+            "indexing": self.indexing,
+            "mapping" : self.mapping,
+        }
+
+        if operation not in operation_map:
+            raise ValueError(f"Unsupported bowtie2 operation: {operation}")
+
+        return operation_map[operation](node)
+
     def __init__(self, config=None, sample_data=None):
         super().__init__(config or {}, sample_data)
 

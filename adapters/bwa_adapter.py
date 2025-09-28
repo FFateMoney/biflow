@@ -9,15 +9,21 @@ class BwaAdapter(BaseAdapter):
         super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.name.lower()
+        operation = node.name.lower()  # node的name即是操作
 
-        if operation in ("indexing", "bwa_index"):
-            return self._build_index(node)
-        if operation in ("batch_mapping", "bwa_mem"):
-            return self._build_mem(node)
-        raise ValueError(f"Unsupported BWA operation: {operation}")
+        # 映射操作名到函数
+        operation_map = {
+            "index": self._index,
+            "mem" : self._mem
+        }
 
-    def _build_index(self, node: WorkflowNode):
+        if operation not in operation_map:
+            raise ValueError(f"Unsupported bwa operation: {operation}")
+
+        return operation_map[operation](node)
+
+
+    def _index(self, node: WorkflowNode):
         bwa_path = node.params["bwa_path"]
         ref_path = Path(node.params["reference"])
         output_prefix = Path(node.output_dir) / node.params["prefix"]
@@ -34,7 +40,7 @@ class BwaAdapter(BaseAdapter):
         ]
         return node
 
-    def _build_mem(self, node: WorkflowNode):
+    def _mem(self, node: WorkflowNode):
         bwa_path = node.params["bwa_path"]
         index_prefix = node.params["index_prefix"]
         platform = node.params["platform"]

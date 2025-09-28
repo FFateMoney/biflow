@@ -11,6 +11,19 @@ class VcftoolsAdapter(BaseAdapter):
         super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
+        operation = node.name.lower()  # node的name即是操作
+
+        # 映射操作名到函数
+        operation_map = {
+           "vcf_filt":self._vcf_filt
+        }
+
+        if operation not in operation_map:
+            raise ValueError(f"Unsupported vcftools operation: {operation}")
+
+        return operation_map[operation](node)
+
+    def _vcf_filt(self, node: WorkflowNode) -> WorkflowNode:
         vcftools_path = node.params["vcftools_path"]
         vcf_in = Path(node.input_dir["vcf"])
         out_dir = Path(node.output_dir)
