@@ -2,48 +2,51 @@
 global:
   flow_name: PostProcessing
   parallelize: true
-  log_dir: /RUN_DOCKER/output/logs
-  output_dir: /RUN_DOCKER/output/results/03_PostProcessing
+  log_dir: /work/logs/post_processing
+  output_dir: /work/output/03_PostProcessing
 
 nodes:
   - id: 1
     tool: vcftools
     subcommand: filter
     input_dir:
-      vcf: /RUN_DOCKER/input/vcf/VariantCalling/ALL.variant.combined.GT.SNP.flt.vcf.gz
-    output_dir: /RUN_DOCKER/output/results/03_PostProcessing/01_VcfFilter
-    log_dir: /RUN_DOCKER/output/logs
+     - vcf: /work/output/02_VariantCalling
+    output_dir:  /work/output/03_PostProcessing/01_VcfFilter
+    log_dir: /work/logs/post_processing
     parallelize: false
     params:
-      - vcftools_path: /opt/conda/bin/vcftools
+      - vcftools_path: vcftools
+      - vcf_prefix: test
 
   - id: 2
     tool: plink
     subcommand: plink
     input_dir:
-      vcf: /RUN_DOCKER/output/results/03_PostProcessing/01_VcfFilter/ALL.variant.combined.GT.SNP.flt.filtered.vcf.recode.vcf.gz
-    output_dir: /RUN_DOCKER/output/results/03_PostProcessing/02_Plink
-    log_dir: /RUN_DOCKER/output/logs
+      - vcf: /work/output/03_PostProcessing/01_VcfFilter
+    output_dir: /work/output/03_PostProcessing/02_Plink
+    log_dir: /work/logs/post_processing
     parallelize: false
     dependencies:
       - 1
     params:
-      - plink_path: /opt/conda/bin/plink
+      - plink_path: plink
       - geno: 0.01
       - maf: 0.05
       - hwe: 1e-06
       - chr-set: 1
+      - vcf_prefix: test
 
   - id: 3
     tool: hapmap
     subcommand: vcf2hapmap
     input_dir:
-      vcf: /RUN_DOCKER/output/results/03_PostProcessing/01_VcfFilter/ALL.variant.combined.GT.SNP.flt.filtered.vcf.recode.vcf.gz
-    output_dir: /RUN_DOCKER/output/results/03_PostProcessing/03_Hapmap
-    log_dir: /RUN_DOCKER/output/logs
+      - vcf: /work/output/03_PostProcessing/02_Plink
+    output_dir: /work/output/03_PostProcessing/03_Hapmap
+    log_dir: /work/logs/post_processing
     parallelize: false
     dependencies:
 
     params:
-      - perl_path: /usr/bin/perl
-      - script_path: /PAPipe/03_shipeiqi/config/vcf2HapMap.pl
+      - perl_path: perl
+      - script_path: /biflow/util/vcf2HapMap.pl
+      - vcf_prefix: test

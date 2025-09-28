@@ -25,7 +25,7 @@ class VcftoolsAdapter(BaseAdapter):
 
     def _filter(self, node: WorkflowNode) -> WorkflowNode:
         vcftools_path = node.params["vcftools_path"]
-        vcf_in = Path(node.input_dir["vcf"])
+        vcf_in = Path(node.input_dir["vcf"])/f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.vcf.gz"
         out_dir = Path(node.output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         

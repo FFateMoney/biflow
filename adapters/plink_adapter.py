@@ -23,7 +23,7 @@ class PlinkAdapter(BaseAdapter):
 
     def _plink(self, node: WorkflowNode) -> WorkflowNode:
         plink_path = node.params["plink_path"]
-        vcf_in = Path(node.input_dir["vcf"])
+        vcf_in = Path(node.input_dir["vcf"]) / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.filtered.vcf.recode.vcf.gz"
         out_dir = Path(node.output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         

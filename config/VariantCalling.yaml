@@ -2,7 +2,7 @@ global:
   flow_name: variant_calling
   parallel : true
   log_dir: /work/log/variant_calling
-  output_dir: /work
+  output_dir: /work/output/02_VariantCalling
 nodes:
   - id: 1
     tool: samtools
@@ -32,8 +32,8 @@ nodes:
     tool: samtools
     subcommand: local_realignment
     input_dir:
-      - bam: /work/output/01
-    output_dir: /work/output/01
+      - bam: /work/output/01_ReadMapping/03_Dedup
+    output_dir: /work/output/01_ReadMapping/03_Dedup
     log_dir: /work/log/variant_calling
     params:
       - tool_path: samtools
@@ -44,7 +44,7 @@ nodes:
     subcommand: haplotype_caller
     parallelize: true
     input_dir:
-      - bam: /work/output/01
+      - bam: /work/output/01_ReadMapping/03_Dedup
       - reference: /work/input/ref
     params:
       - java_path: java
@@ -52,7 +52,7 @@ nodes:
       - tool_path: gatk
       - th: "5"
       - reference: cow.chr1.fa
-    output_dir: /work/output/02
+    output_dir: /work/output/02_VariantCalling
     log_dir: /work/log/variant_calling
     dependencies:
       - 1
@@ -64,14 +64,14 @@ nodes:
     subcommand: combine_gvcfs
     input_dir:
       - reference: /work/input/ref
-      - gvcf: /work/output/02
+      - gvcf: /work/output/02_VariantCalling
     params:
       - java_path: java
       - memory: "20"
       - vcf_prefix: test
       - tool_path: gatk
       - reference: cow.chr1.fa
-    output_dir: /work/output/02
+    output_dir: /work/output/02_VariantCalling
     log_dir: /work/log/variant_calling
     dependencies:
       - 4
@@ -81,7 +81,7 @@ nodes:
     subcommand: genotyping
     input_dir:
       - reference: /work/input/ref
-      - vcf: /work/output/02
+      - vcf: /work/output/02_VariantCalling
     params:
       - java_path: java
       - memory: "20"
@@ -89,7 +89,7 @@ nodes:
       - vcf_prefix: test
       - reference: cow.chr1.fa
     log_dir: /work/log/variant_calling
-    output_dir: /work/output/02
+    output_dir: /work/output/02_VariantCalling
     dependencies:
       - 5
 
@@ -98,9 +98,9 @@ nodes:
     subcommand: varint_selection
     input_dir:
       - reference: /work/input/ref
-      - vcf: /work/output/02
+      - vcf: /work/output/02_VariantCalling
     log_dir: /work/log/variant_calling
-    output_dir: /work/output/02
+    output_dir: /work/output/02_VariantCalling
     params:
       - reference: cow.chr1.fa
       - vcf_prefix: test
@@ -115,9 +115,9 @@ nodes:
     subcommand: variant_filtering
     input_dir:
       - reference: /work/input/ref
-      - vcf: /work/output/02
+      - vcf: /work/output/02_VariantCalling
     log_dir: /work/log/variant_calling
-    output_dir: /work/output/02
+    output_dir: /work/output/02_VariantCalling
     params:
       - reference: cow.chr1.fa
       - vcf_prefix: test
@@ -133,9 +133,9 @@ nodes:
     subcommand: select_variants
     input_dir:
       - reference: /work/input/ref
-      - vcf: /work/output/02
+      - vcf: /work/output/02_VariantCalling
     log_dir: /work/log/variant_calling
-    output_dir: /work/output/02
+    output_dir: /work/output/02_VariantCalling
     params:
       - reference: cow.chr1.fa
       - vcf_prefix: test

@@ -1,4 +1,6 @@
 global:
+  output_dir: /work/output/00_ReadQC
+  log_dir: /work/log/ReadQC
   flow_name: ReadQC
   parallel : true
 nodes:
@@ -6,10 +8,11 @@ nodes:
     tool: fastqc
     subcommand: fastqc
     input_dir:
-      - fastq: /home/wu/RUN_DOCKER/data/input
-    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_Before_Trimming
+      - fastq: /work/input/fq
+    output_dir: /work/output/00_ReadQC/QC_Report_Before_Trimming
+    log_dir: /work/log/ReadQC
     params:
-      - fastqc_path: /home/wu/FastQC/fastqc
+      - fastqc_path: fastqc
       - threads: 4
       - flag: 0
       - file_pattern: '*.fastq*'
@@ -17,8 +20,9 @@ nodes:
   - id: 2
     tool: multiqc
     subcommand: multiqc
-    input_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_Before_Trimming
-    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_Before_Trimming
+    input_dir: /work/output/00_ReadQC/QC_Report_Before_Trimming
+    output_dir: /work/output/00_ReadQC/QC_Report_Before_Trimming
+    log_dir: /work/log/ReadQC
     dependencies:
       - 1
     params:
@@ -28,10 +32,11 @@ nodes:
     tool: trim_galore
     subcommand: trim_galore
     input_dir:
-      - fastq: /home/wu/RUN_DOCKER/data/input
-    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/TrimmedData
+      - fastq: /work/input/fq
+    output_dir: /work/output/00_ReadQC/TrimmedData
+    log_dir: /work/log/ReadQC
     params:
-      - trim_galore_path: /home/wu/TrimGalore-0.6.10/trim_galore
+      - trim_galore_path: trim_galore
       - cores: 4
       - additional_params: ""
       - paired_pattern: '*_1.*'
@@ -41,12 +46,13 @@ nodes:
     tool: fastqc
     subcommand: fastqc
     input_dir:
-      - trimmed_data: /home/wu/RUN_DOCKER/out1/00_ReadQC/TrimmedData
-    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_After_Trimming
+      - trimmed_data: /work/output/00_ReadQC/TrimmedData
+    output_dir: /work/output/00_ReadQC/QC_Report_After_Trimming
+    log_dir: /work/log/ReadQC
     dependencies:
       - 3
     params:
-      - fastqc_path: /home/wu/FastQC/fastqc
+      - fastqc_path: fastqc
       - threads: 8
       - flag: 1
       - file_pattern: '*_val_*.fq.gz'
@@ -55,8 +61,9 @@ nodes:
     tool: multiqc
     subcommand: multiqc
     parallelize : true
-    input_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_After_Trimming
-    output_dir: /home/wu/RUN_DOCKER/out1/00_ReadQC/QC_Report_After_Trimming
+    input_dir: /work/output/00_ReadQC/QC_Report_After_Trimming
+    output_dir: /work/output/00_ReadQC/QC_Report_After_Trimming
+    log_dir: /work/log/ReadQC
     dependencies:
       - 4
     params:

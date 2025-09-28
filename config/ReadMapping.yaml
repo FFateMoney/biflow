@@ -1,37 +1,37 @@
 global:
   flow_name: ReadMapping
   parallelize: true
-  log_dir: /RUN_DOCKER/output/logs
-  output_dir: /RUN_DOCKER/output/results/01_ReadMapping
+  log_dir: /work/log/ReadMapping
+  output_dir: /work/output/01_ReadMapping
 
 nodes:
   - id: 1
     tool: bwa
     subcommand: index
     input_dir:
-      - reference: /RUN_DOCKER/input/ref/cow.chr1.fa
-    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing
-    log_dir: /RUN_DOCKER/output/logs
+      - reference: /work/input/ref
+    output_dir: /work/output/01_ReadMapping/01_Indexing
+    log_dir: /work/log/ReadMapping
     params:
-      - bwa_path: "/opt/conda/bin/bwa"
+      - bwa_path: "bwa"
       - threads: 20
-      - reference: "/RUN_DOCKER/input/ref/cow.chr1.fa"
+      - reference: "/work/input/ref/cow.chr1.fa"
       - prefix: "ref"
 
   - id: 2
     tool: bwa
     subcommand: mem
     input_dir:
-      - base: /RUN_DOCKER/input/TrimmedData_repaired
-    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
-    log_dir: /RUN_DOCKER/output/logs
+      - base: /work/output/00_ReadQC/TrimmedData
+    output_dir: /work/output/01_ReadMapping/02_Mapping
+    log_dir: /work/log/ReadMapping
     parallelize: true
     dependencies:
       - 1
     params:
-      - bwa_path: "/opt/conda/bin/bwa"
+      - bwa_path: "bwa"
       - threads: 4
-      - index_prefix: /RUN_DOCKER/output/results/01_ReadMapping/01_Indexing/ref
+      - index_prefix: /work/output/01_ReadMapping/01_Indexing/ref
       - platform: "ILLUMINA"
       - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
       - samples: ["1", "2", "3", "4", "5"]
@@ -40,14 +40,14 @@ nodes:
     tool: samtools
     subcommand: sort
     input_dir:
-      - input_sam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
-    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
-    log_dir: /RUN_DOCKER/output/logs
+      - input_sam: /work/output/01_ReadMapping/02_Mapping
+    output_dir: /work/output/01_ReadMapping/02_Mapping
+    log_dir: /work/log/ReadMapping
     parallelize: true
     dependencies:
       - 2
     params:
-      - samtools_path: "/opt/conda/bin/samtools"
+      - samtools_path: "samtools"
       - threads: 4
       - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
       - samples: ["1", "2", "3", "4", "5"]
@@ -56,15 +56,15 @@ nodes:
     tool: picard
     subcommand: mark_duplicates
     input_dir:
-      - input_bam: /RUN_DOCKER/output/results/01_ReadMapping/02_Mapping
-    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
-    log_dir: /RUN_DOCKER/output/logs
+      - input_bam: /work/output/01_ReadMapping/02_Mapping
+    output_dir: /work/output/01_ReadMapping/03_Dedup
+    log_dir: /work/log/ReadMapping
     parallelize: true
     dependencies:
       - 3
     params:
-      - java_path: "/opt/conda/bin/java"
-      - picard_path:  "/opt/conda/pkgs/picard-2.27.5-hdfd78af_0/share/picard-2.27.5-0/picard.jar"
+      - java_path: "java"
+      - picard_path:  "/opt/picard.jar"
       - memory: 4
       - breeds: ["Angus", "Hanwoo", "Holstein", "Jersey", "Simmental"]
       - samples: ["1", "2", "3", "4", "5"]
@@ -73,15 +73,15 @@ nodes:
     tool: picard
     subcommand: add_read_groups
     input_dir:
-      - input_bam: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
-    output_dir: /RUN_DOCKER/output/results/01_ReadMapping/03_Dedup
-    log_dir: /RUN_DOCKER/output/logs
+      - input_bam: /work/output/01_ReadMapping/03_Dedup
+    output_dir: /work/output/01_ReadMapping/03_Dedup
+    log_dir: /work/log/ReadMapping
     parallelize: true
     dependencies:
       - 4
     params:
-      - java_path: "/opt/conda/bin/java"
-      - picard_path:  "/opt/conda/pkgs/picard-2.27.5-hdfd78af_0/share/picard-2.27.5-0/picard.jar"
+      - java_path: "java"
+      - picard_path:  "/opt/picard.jar"
       - memory: 4
       - platform: "ILLUMINA"
       - platform_unit: "UNIT1"

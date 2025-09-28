@@ -25,7 +25,7 @@ class HapmapAdapter(BaseAdapter):
     def vcf2hapmap (self, node: WorkflowNode) -> WorkflowNode:
         perl_path = node.params["perl_path"]
         script_path = node.params["script_path"]
-        vcf_in = Path(node.input_dir["vcf"])
+        vcf_in = Path(node.input_dir["vcf"]) / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.filtered.vcf.recode.vcf.gz"
         out_dir = Path(node.output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
