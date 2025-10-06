@@ -91,7 +91,7 @@ class GatkAdapter(BaseAdapter):
         return node
 
     '''
-    参数：input_dir:reference,vcf;params:java_path,memory,tool_path,vcf_prefix
+    参数:input_dir:reference,vcf;params:java_path,memory,tool_path,vcf_prefix
     '''
 
     def _genotyping(self, node: WorkflowNode):
