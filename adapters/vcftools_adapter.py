@@ -15,7 +15,7 @@ class VcftoolsAdapter(BaseAdapter):
 
         # 映射操作名到函数
         operation_map = {
-           "filter":self._filter
+           "filter": self._filter
         }
 
         if operation not in operation_map:
@@ -25,7 +25,7 @@ class VcftoolsAdapter(BaseAdapter):
 
     def _filter(self, node: WorkflowNode) -> WorkflowNode:
         vcftools_path = node.params["vcftools_path"]
-        vcf_in = Path(node.input_dir["vcf"])/f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.vcf.gz"
+        vcf_in = Path(node.input_dir["vcf"]) / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.vcf.gz"
         out_dir = Path(node.output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         
@@ -61,10 +61,10 @@ class VcftoolsAdapter(BaseAdapter):
                 "--recode"
             ]
         
-        # 添加压缩和索引命令
+        # 添加压缩和索引命令 - 修复：使用列表形式
         output_vcf = out_dir / f"{new_vcf}.recode.vcf"
-        compress_cmd = f"bgzip -f {output_vcf}"
-        index_cmd = f"tabix -p vcf {output_vcf}.gz"
+        compress_cmd = ["bgzip", "-f", str(output_vcf)]
+        index_cmd = ["tabix", "-p", "vcf", f"{str(output_vcf)}.gz"]
         
         node.commands = [cmd, compress_cmd, index_cmd]
         return node

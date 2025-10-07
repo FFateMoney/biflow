@@ -91,7 +91,7 @@ class GatkAdapter(BaseAdapter):
         return node
 
     '''
-    参数：input_dir:reference,vcf;params:java_path,memory,tool_path,vcf_prefix
+    参数:input_dir:reference,vcf;params:java_path,memory,tool_path,vcf_prefix
     '''
 
     def _genotyping(self, node: WorkflowNode):
@@ -119,7 +119,7 @@ class GatkAdapter(BaseAdapter):
         input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.vcf"
         out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf"
         command = [
-            node.params.get("tool_path"),  # 一般就是 "gatk"
+            node.params.get("tool_path"), 
             "--java-options", f"-Xmx{node.params.get('memory')}g",
             "VariantFiltration",
             "-R", reference_path,
@@ -142,8 +142,9 @@ class GatkAdapter(BaseAdapter):
 
     def _select_variants(self, node: WorkflowNode):
         reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
+        # 使用实际存在的未压缩文件
         input_path: Path = node.input_dir.get(
-            "vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf.gz"
+            "vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf"
         out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.vcf.gz"
         command = [
             node.params.get("tool_path"),
@@ -152,7 +153,7 @@ class GatkAdapter(BaseAdapter):
             "-R", reference_path,
             "-V", input_path.as_posix(),
             "-O", out_path.as_posix(),
-            "--select-expr", 'vc.isFiltered()',  # 选出已标记为 FILTER 的位点
+            "--select", 'vc.isFiltered()',  
             "--invert-select"  # 取反，保留未被过滤的
         ]
 
