@@ -1,5 +1,4 @@
 global:
-  output_dir: /work/output
   log_dir: /work/log
   flow_name: test
   parallel : true
@@ -348,5 +347,5 @@ nodes:
       - 20
     params:
       - perl_path: perl
-      - script_path: /work/biflow/util/vcf2HapMap.pl
+      - script_path: /biflow/util/vcf2HapMap.pl
       - vcf_prefix: test

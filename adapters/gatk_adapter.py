@@ -116,8 +116,8 @@ class GatkAdapter(BaseAdapter):
 
     def _variant_filtering(self, node: WorkflowNode):
         reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
-        input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.vcf"
-        out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf"
+        input_path: Path = node.input_dir.get("vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.vcf.gz"
+        out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf.gz"
         command = [
             node.params.get("tool_path"), 
             "--java-options", f"-Xmx{node.params.get('memory')}g",
@@ -144,7 +144,7 @@ class GatkAdapter(BaseAdapter):
         reference_path = (node.input_dir.get("reference") / node.params.get("reference")).as_posix()
         # 使用实际存在的未压缩文件
         input_path: Path = node.input_dir.get(
-            "vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf"
+            "vcf") / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.tag.vcf.gz"
         out_path: Path = node.output_dir / f"{node.params.get('vcf_prefix')}.variant.combined.GT.SNP.flt.vcf.gz"
         command = [
             node.params.get("tool_path"),
