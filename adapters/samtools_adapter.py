@@ -74,6 +74,3 @@ class SamtoolsAdapter(BaseAdapter):
             commands.append(command)
         node.commands = commands
         return node
-
-
-

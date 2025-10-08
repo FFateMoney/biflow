@@ -61,10 +61,10 @@ class VcftoolsAdapter(BaseAdapter):
                 "--recode"
             ]
         
-        # 添加压缩和索引命令
+        # 添加压缩和索引命令 - 修复：使用列表形式
         output_vcf = out_dir / f"{new_vcf}.recode.vcf"
-        compress_cmd = f"bgzip -f {output_vcf}"
-        index_cmd = f"tabix -p vcf {output_vcf}.gz"
+        compress_cmd = ["bgzip", "-f", str(output_vcf)]
+        index_cmd = ["tabix", "-p", "vcf", f"{str(output_vcf)}.gz"]
         
         node.commands = [cmd, compress_cmd, index_cmd]
         return node
