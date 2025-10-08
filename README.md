@@ -31,10 +31,22 @@ java -jar /opt/picard.jar
 
 ### 使用我们提供的配置文件快速开始
 
-首先通过下面的命令行启动下载好的docker image，注意挂载你的数据文件夹和Biflow源代码文件夹。
+首先通过下面的命令获取我们提供的测试数据：
 
 ```
-docker run -it -v your_Biflow_path:/biflow - your_work_path/work:/work /fatemoney/biflow:0.3bin/bash
+wget https://github.com/FFateMoney/biflow/releases/download/v0.3/work.zip
+```
+
+然后使用任意解压工具解压，如：
+
+```
+unzip work.zip
+```
+
+然后通过下面的命令行启动下载好的docker image，注意挂载你的work文件夹和Biflow源代码文件夹。
+
+```
+docker run -it -v your_Biflow_path:/biflow -v your_work_path/work:/work /fatemoney/biflow:0.3 bin/bash
 ```
 
 然后运行下面的命令行开始工作流：
@@ -66,7 +78,7 @@ biflow使用的配置文件是yaml格式的文件，一个标准的biflow配置�
 | 参数           | 作用                                                                                                                                                                                                                                                |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | id           | 节点的唯一标识符，类型为数字，不可重复                                                                                                                                                                                                                               |
-| tool         | 决定节点的调用的工具包，例如bwa、vcftools等。支持的工具包的列表和其与参数值的映射请参考[映射表](./support.md)                                                                                                                                                  |
+| tool         | 决定节点的调用的工具包，例如bwa、vcftools等。支持的工具包的列表和其与参数值的映射请参考[映射表](./support.md)                                                                                                                                                                              |
 | subcommand   | 决定使用的工具包的具体操作，例如tool设置为bwa，subcommand设置为index，则调用的是bwa index操作。每个工具包支持的具体操作请参考[映射表](./support.md)                                                                                                                                                 |
 | input_dir    | 该参数可以是一个键值对的数组，也可以是单个键值对。用来设置输入文件的目录，例如，若设置为input_dir: reference: /work/input/ref，则该节点会到/work/input/ref目录下寻找reference。若需要同时设置多个文件的输入目录，则需要设置为数组的形式，具体请参考[full.yaml](./config/full.yaml)                                                           |
 | output_dir   | 该参数决定节点输出文件的位置                                                                                                                                                                                                                                    |
@@ -76,7 +88,5 @@ biflow使用的配置文件是yaml格式的文件，一个标准的biflow配置�
 | params       | 该参数可为一个数组或为空。该参数是用来设置不同的节点运行的不同的命令所需要的特定的参数的。如，运行bwa命令，parmas需要包含bwa_path，运行samtools需要包含samtools_path，简单来说，该参数包含的内容因所调用的tool与subcommand而异。                                                                                                        |
 
 为了方便设定参数，我们提供可视化设置节点参数与节点间依赖关系的配置生成器，请转到[配置生成器](https://github.com/FFateMoney/biflow_config_generator)的github仓库查看详细教程。 
-
-
 
 
