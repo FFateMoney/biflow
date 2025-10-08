@@ -2,16 +2,26 @@ from adapters.base_adapter import BaseAdapter
 from core.node import WorkflowNode
 from pathlib import Path
 
+#把adapt改成map形式 01完成
+
 class BwaAdapter(BaseAdapter):
     def __init__(self, config=None, sample_data=None):
         super().__init__(config or {}, sample_data)
 
     def adapt(self, node: WorkflowNode) -> WorkflowNode:
-        operation = node.subcommand.lower()
-        operation_map = {"index": self._index, "mem": self._mem}
+        operation = node.subcommand.lower()  # node的name即是操作
+
+        # 映射操作名到函数
+        operation_map = {
+            "index": self._index,
+            "mem" : self._mem
+        }
+
         if operation not in operation_map:
             raise ValueError(f"Unsupported bwa operation: {operation}")
+
         return operation_map[operation](node)
+
 
     def _index(self, node: WorkflowNode):
         bwa_path = node.params["bwa_path"]
@@ -22,7 +32,7 @@ class BwaAdapter(BaseAdapter):
         return node
 
     def _mem(self, node: WorkflowNode):
-        bwa_path     = node.params["bwa_path"]
+        bwa_path = node.params["bwa_path"]
         index_prefix = node.params["index_prefix"]
         platform     = node.params["platform"]
         breeds       = node.params.get("breeds") or []

@@ -58,7 +58,7 @@ class SamtoolsAdapter(BaseAdapter):
         node.commands.append(command)
         return node
 
-    def _samtools_local_realignment(self, node: WorkflowNode):
+    def _local_realignment(self,node: WorkflowNode):
         samtools_path: Path = Path(node.params.get("tool_path"))
         input_path: Path =  Path(node.input_dir.get("bam"))
         output_path = node.output_dir

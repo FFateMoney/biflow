@@ -1,4 +1,5 @@
 global:
+  output_dir: /work/output
   log_dir: /work/log
   flow_name: test
   parallel : true
@@ -309,7 +310,7 @@ nodes:
     input_dir:
       - vcf: /work/output/02_VariantCalling
     output_dir: /work/output/03_PostProcessing/01_VcfFilter
-    log_dir: /work/log/post_processing
+    log_dir: /work/logs/post_processing
     parallelize: false
     dependencies:
       - 19
@@ -323,7 +324,7 @@ nodes:
     input_dir:
       - vcf: /work/output/03_PostProcessing/01_VcfFilter
     output_dir: /work/output/03_PostProcessing/02_Plink
-    log_dir: /work/log/post_processing
+    log_dir: /work/logs/post_processing
     parallelize: false
     dependencies:
       - 20
@@ -339,12 +340,12 @@ nodes:
     tool: hapmap
     subcommand: vcf2hapmap
     input_dir:
-      - vcf: /work/output/03_PostProcessing/01_VcfFilter
+      - vcf: /work/output/03_PostProcessing/02_Plink
     output_dir: /work/output/03_PostProcessing/03_Hapmap
-    log_dir: /work/log/post_processing
+    log_dir: /work/logs/post_processing
     parallelize: false
     dependencies:
-      - 20
+      - 19
     params:
       - perl_path: perl
       - script_path: /biflow/util/vcf2HapMap.pl
